@@ -1,11 +1,13 @@
-# Beszel
+# Beszel-Coolify
+
+Beszel-Coolify is a fork of Beszel which replaces the displayed container names with the value of the "coolify.serviceName" container label.
+
+## Beszel
 
 Beszel is a lightweight server monitoring platform that includes Docker statistics, historical data, and alert functions.
 
 It has a friendly web interface, simple configuration, and is ready to use out of the box. It supports automatic backup, multi-user, OAuth authentication, and API access.
 
-[![agent Docker Image Size](https://img.shields.io/docker/image-size/henrygd/beszel-agent/0.4.0?logo=docker&label=agent%20image%20size)](https://hub.docker.com/r/henrygd/beszel-agent)
-[![hub Docker Image Size](https://img.shields.io/docker/image-size/henrygd/beszel/0.4.0?logo=docker&label=hub%20image%20size)](https://hub.docker.com/r/henrygd/beszel)
 [![MIT license](https://img.shields.io/github/license/henrygd/beszel?color=%239944ee)](https://github.com/henrygd/beszel/blob/main/LICENSE)
 [![Crowdin](https://badges.crowdin.net/beszel/localized.svg)](https://crowdin.com/project/beszel)
 
