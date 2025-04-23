@@ -6,6 +6,7 @@ import "time"
 type ApiInfo struct {
 	Id      string
 	IdShort string
+	Labels  map[string]string
 	Names   []string
 	Status  string
 	// Image   string
@@ -15,7 +16,6 @@ type ApiInfo struct {
 	// Ports      []Port
 	// SizeRw     int64 `json:",omitempty"`
 	// SizeRootFs int64 `json:",omitempty"`
-	// Labels     map[string]string
 	// State      string
 	// HostConfig struct {
 	// 	NetworkMode string            `json:",omitempty"`
