@@ -137,7 +137,8 @@ func (dm *dockerManager) getDockerStats() ([]*container.Stats, error) {
 
 // Updates stats for individual container
 func (dm *dockerManager) updateContainerStats(ctr *container.ApiInfo) error {
-	name := ctr.Names[0][1:]
+	// name := ctr.Names[0][1:]
+	name := ctr.Labels["coolify.serviceName"]
 
 	resp, err := dm.client.Get("http://localhost/containers/" + ctr.IdShort + "/stats?stream=0&one-shot=1")
 	if err != nil {
