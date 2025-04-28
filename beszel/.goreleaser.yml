@@ -114,15 +114,15 @@ nfpms:
         # https://github.com/goreleaser/goreleaser/issues/5487
         #config: ../supplemental/debian/config.sh
 
-scoops:
-  - ids: [beszel-agent]
-    name: beszel-agent
-    repository:
-      owner: henrygd
-      name: beszel-scoops
-    homepage: 'https://beszel.dev'
-    description: 'Agent for Beszel, a lightweight server monitoring platform.'
-    license: MIT
+# scoops:
+#   - ids: [beszel-agent]
+#     name: beszel-agent
+#     repository:
+#       owner: henrygd
+#       name: beszel-scoops
+#     homepage: 'https://beszel.dev'
+#     description: 'Agent for Beszel, a lightweight server monitoring platform.'
+#     license: MIT
 
 # # Needs choco installed, so doesn't build on linux / default gh workflow :(
 # chocolateys:
@@ -147,31 +147,31 @@ scoops:
 #     require_license_acceptance: false
 #     release_notes: 'https://github.com/henrygd/beszel/releases/tag/v{{ .Version }}'
 
-brews:
-  - ids: [beszel-agent]
-    name: beszel-agent
-    repository:
-      owner: henrygd
-      name: homebrew-beszel
-    homepage: 'https://beszel.dev'
-    description: 'Agent for Beszel, a lightweight server monitoring platform.'
-    license: MIT
-    extra_install: |
-      (bin/"beszel-agent-launcher").write <<~EOS
-        #!/bin/bash
-        set -a
-        if [ -f "$HOME/.config/beszel/beszel-agent.env" ]; then
-          source "$HOME/.config/beszel/beszel-agent.env"
-        fi
-        set +a
-        exec #{bin}/beszel-agent "$@"
-      EOS
-      (bin/"beszel-agent-launcher").chmod 0755
-    service: |
-      run ["#{bin}/beszel-agent-launcher"]
-      log_path "#{Dir.home}/.cache/beszel/beszel-agent.log"
-      error_log_path "#{Dir.home}/.cache/beszel/beszel-agent.log"
-      keep_alive true
+# brews:
+#   - ids: [beszel-agent]
+#     name: beszel-agent
+#     repository:
+#       owner: henrygd
+#       name: homebrew-beszel
+#     homepage: 'https://beszel.dev'
+#     description: 'Agent for Beszel, a lightweight server monitoring platform.'
+#     license: MIT
+#     extra_install: |
+#       (bin/"beszel-agent-launcher").write <<~EOS
+#         #!/bin/bash
+#         set -a
+#         if [ -f "$HOME/.config/beszel/beszel-agent.env" ]; then
+#           source "$HOME/.config/beszel/beszel-agent.env"
+#         fi
+#         set +a
+#         exec #{bin}/beszel-agent "$@"
+#       EOS
+#       (bin/"beszel-agent-launcher").chmod 0755
+#     service: |
+#       run ["#{bin}/beszel-agent-launcher"]
+#       log_path "#{Dir.home}/.cache/beszel/beszel-agent.log"
+#       error_log_path "#{Dir.home}/.cache/beszel/beszel-agent.log"
+#       keep_alive true
 
 release:
   draft: true
