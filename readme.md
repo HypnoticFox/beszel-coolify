@@ -2,8 +2,8 @@
 
 Beszel-Coolify is a fork of Beszel which replaces the displayed container names with the value of the "coolify.serviceName" container label.
 
-[![agent Docker Image Size](https://img.shields.io/docker/image-size/hypnoticfox/beszel-coolify-agent?logo=docker&label=agent%20image%20size)](https://hub.docker.com/r/hypnoticfox/beszel-coolify-agent)
-[![hub Docker Image Size](https://img.shields.io/docker/image-size/hypnoticfox/beszel-coolify?logo=docker&label=hub%20image%20size)](https://hub.docker.com/r/hypnoticfox/beszel-coolify)
+[![agent Docker Image Size](https://img.shields.io/docker/image-size/hypnoticfox/beszel-coolify-agent/latest?logo=docker&label=agent%20image%20size)](https://hub.docker.com/r/hypnoticfox/beszel-coolify-agent)
+[![hub Docker Image Size](https://img.shields.io/docker/image-size/hypnoticfox/beszel-coolify/latest?logo=docker&label=hub%20image%20size)](https://hub.docker.com/r/hypnoticfox/beszel-coolify)
 
 ## Beszel
 
@@ -14,7 +14,7 @@ It has a friendly web interface, simple configuration, and is ready to use out o
 [![MIT license](https://img.shields.io/github/license/henrygd/beszel?color=%239944ee)](https://github.com/henrygd/beszel/blob/main/LICENSE)
 [![Crowdin](https://badges.crowdin.net/beszel/localized.svg)](https://crowdin.com/project/beszel)
 
-![Screenshot of beszel dashboard and system page](https://henrygd-assets.b-cdn.net/beszel/screenshot-new.png)
+![Screenshot of Beszel dashboard and system page, side by side. The dashboard shows metrics from multiple connected systems, while the system page shows detailed metrics for a single system.](https://henrygd-assets.b-cdn.net/beszel/screenshot-new.png)
 
 ## Features
 
