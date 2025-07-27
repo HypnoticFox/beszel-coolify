@@ -2,7 +2,6 @@ package alerts
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -87,7 +86,7 @@ func (am *AlertManager) HandleStatusAlerts(newStatus string, systemRecord *core.
 
 // getSystemStatusAlerts retrieves all "Status" alert records for a given system ID.
 func (am *AlertManager) getSystemStatusAlerts(systemID string) ([]*core.Record, error) {
-	alertRecords, err := am.app.FindAllRecords("alerts", dbx.HashExp{
+	alertRecords, err := am.hub.FindAllRecords("alerts", dbx.HashExp{
 		"system": systemID,
 		"name":   "Status",
 	})
@@ -130,13 +129,21 @@ func (am *AlertManager) handleSystemUp(systemName string, alertRecords []*core.R
 		}
 		// No alert scheduled for this record, send "up" alert
 		if err := am.sendStatusAlert("up", systemName, alertRecord); err != nil {
-			am.app.Logger().Error("Failed to send alert", "err", err.Error())
+			am.hub.Logger().Error("Failed to send alert", "err", err)
 		}
 	}
 }
 
 // sendStatusAlert sends a status alert ("up" or "down") to the users associated with the alert records.
 func (am *AlertManager) sendStatusAlert(alertStatus string, systemName string, alertRecord *core.Record) error {
+	switch alertStatus {
+	case "up":
+		alertRecord.Set("triggered", false)
+	case "down":
+		alertRecord.Set("triggered", true)
+	}
+	am.hub.Save(alertRecord)
+
 	var emoji string
 	if alertStatus == "up" {
 		emoji = "\u2705" // Green checkmark emoji
@@ -147,19 +154,19 @@ func (am *AlertManager) sendStatusAlert(alertStatus string, systemName string, a
 	title := fmt.Sprintf("Connection to %s is %s %v", systemName, alertStatus, emoji)
 	message := strings.TrimSuffix(title, emoji)
 
-	if errs := am.app.ExpandRecord(alertRecord, []string{"user"}, nil); len(errs) > 0 {
-		return errs["user"]
-	}
-	user := alertRecord.ExpandedOne("user")
-	if user == nil {
-		return nil
-	}
+	// if errs := am.hub.ExpandRecord(alertRecord, []string{"user"}, nil); len(errs) > 0 {
+	// 	return errs["user"]
+	// }
+	// user := alertRecord.ExpandedOne("user")
+	// if user == nil {
+	// 	return nil
+	// }
 
 	return am.SendAlert(AlertMessageData{
-		UserID:   user.Id,
+		UserID:   alertRecord.GetString("user"),
 		Title:    title,
 		Message:  message,
-		Link:     am.app.Settings().Meta.AppURL + "/system/" + url.PathEscape(systemName),
+		Link:     am.hub.MakeLink("system", systemName),
 		LinkText: "View " + systemName,
 	})
 }

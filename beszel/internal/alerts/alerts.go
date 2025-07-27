@@ -15,8 +15,13 @@ import (
 	"github.com/pocketbase/pocketbase/tools/mailer"
 )
 
+type hubLike interface {
+	core.App
+	MakeLink(parts ...string) string
+}
+
 type AlertManager struct {
-	app           core.App
+	hub           hubLike
 	alertQueue    chan alertTask
 	stopChan      chan struct{}
 	pendingAlerts sync.Map
@@ -42,6 +47,7 @@ type SystemAlertStats struct {
 	NetSent      float64            `json:"ns"`
 	NetRecv      float64            `json:"nr"`
 	Temperatures map[string]float32 `json:"t"`
+	LoadAvg      [3]float64         `json:"la"`
 }
 
 type SystemAlertData struct {
@@ -79,19 +85,27 @@ var supportsTitle = map[string]struct{}{
 }
 
 // NewAlertManager creates a new AlertManager instance.
-func NewAlertManager(app core.App) *AlertManager {
+func NewAlertManager(app hubLike) *AlertManager {
 	am := &AlertManager{
-		app:        app,
+		hub:        app,
 		alertQueue: make(chan alertTask),
 		stopChan:   make(chan struct{}),
 	}
+	am.bindEvents()
 	go am.startWorker()
 	return am
 }
 
+// Bind events to the alerts collection lifecycle
+func (am *AlertManager) bindEvents() {
+	am.hub.OnRecordAfterUpdateSuccess("alerts").BindFunc(updateHistoryOnAlertUpdate)
+	am.hub.OnRecordAfterDeleteSuccess("alerts").BindFunc(resolveHistoryOnAlertDelete)
+}
+
+// SendAlert sends an alert to the user
 func (am *AlertManager) SendAlert(data AlertMessageData) error {
 	// get user settings
-	record, err := am.app.FindFirstRecordByFilter(
+	record, err := am.hub.FindFirstRecordByFilter(
 		"user_settings", "user={:user}",
 		dbx.Params{"user": data.UserID},
 	)
@@ -104,12 +118,12 @@ func (am *AlertManager) SendAlert(data AlertMessageData) error {
 		Webhooks: []string{},
 	}
 	if err := record.UnmarshalJSONField("settings", &userAlertSettings); err != nil {
-		am.app.Logger().Error("Failed to unmarshal user settings", "err", err.Error())
+		am.hub.Logger().Error("Failed to unmarshal user settings", "err", err)
 	}
 	// send alerts via webhooks
 	for _, webhook := range userAlertSettings.Webhooks {
 		if err := am.SendShoutrrrAlert(webhook, data.Title, data.Message, data.Link, data.LinkText); err != nil {
-			am.app.Logger().Error("Failed to send shoutrrr alert", "err", err.Error())
+			am.hub.Logger().Error("Failed to send shoutrrr alert", "err", err)
 		}
 	}
 	// send alerts via email
@@ -125,15 +139,15 @@ func (am *AlertManager) SendAlert(data AlertMessageData) error {
 		Subject: data.Title,
 		Text:    data.Message + fmt.Sprintf("\n\n%s", data.Link),
 		From: mail.Address{
-			Address: am.app.Settings().Meta.SenderAddress,
-			Name:    am.app.Settings().Meta.SenderName,
+			Address: am.hub.Settings().Meta.SenderAddress,
+			Name:    am.hub.Settings().Meta.SenderName,
 		},
 	}
-	err = am.app.NewMailClient().Send(&message)
+	err = am.hub.NewMailClient().Send(&message)
 	if err != nil {
 		return err
 	}
-	am.app.Logger().Info("Sent email alert", "to", message.To, "subj", message.Subject)
+	am.hub.Logger().Info("Sent email alert", "to", message.To, "subj", message.Subject)
 	return nil
 }
 
@@ -183,9 +197,9 @@ func (am *AlertManager) SendShoutrrrAlert(notificationUrl, title, message, link,
 	err = shoutrrr.Send(parsedURL.String(), message)
 
 	if err == nil {
-		am.app.Logger().Info("Sent shoutrrr alert", "title", title)
+		am.hub.Logger().Info("Sent shoutrrr alert", "title", title)
 	} else {
-		am.app.Logger().Error("Error sending shoutrrr alert", "err", err.Error())
+		am.hub.Logger().Error("Error sending shoutrrr alert", "err", err)
 		return err
 	}
 	return nil
@@ -201,7 +215,7 @@ func (am *AlertManager) SendTestNotification(e *core.RequestEvent) error {
 	if url == "" {
 		return e.JSON(200, map[string]string{"err": "URL is required"})
 	}
-	err := am.SendShoutrrrAlert(url, "Test Alert", "This is a notification from Beszel.", am.app.Settings().Meta.AppURL, "View Beszel")
+	err := am.SendShoutrrrAlert(url, "Test Alert", "This is a notification from Beszel.", am.hub.Settings().Meta.AppURL, "View Beszel")
 	if err != nil {
 		return e.JSON(200, map[string]string{"err": err.Error()})
 	}

@@ -4,19 +4,24 @@ package hub
 import (
 	"beszel"
 	"beszel/internal/alerts"
+	"beszel/internal/hub/config"
 	"beszel/internal/hub/systems"
 	"beszel/internal/records"
 	"beszel/internal/users"
 	"beszel/site"
 	"crypto/ed25519"
 	"encoding/pem"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"path"
 	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
@@ -30,6 +35,7 @@ type Hub struct {
 	rm     *records.RecordManager
 	sm     *systems.SystemManager
 	pubKey string
+	signer ssh.Signer
 	appURL string
 }
 
@@ -56,14 +62,13 @@ func GetEnv(key string) (value string, exists bool) {
 }
 
 func (h *Hub) StartHub() error {
-
 	h.App.OnServe().BindFunc(func(e *core.ServeEvent) error {
 		// initialize settings / collections
 		if err := h.initialize(e); err != nil {
 			return err
 		}
 		// sync systems with config
-		if err := syncSystemsWithConfig(e); err != nil {
+		if err := config.SyncSystems(e); err != nil {
 			return err
 		}
 		// register api routes
@@ -111,6 +116,9 @@ func (h *Hub) initialize(e *core.ServeEvent) error {
 	if h.appURL != "" {
 		settings.Meta.AppURL = h.appURL
 	}
+	if err := e.App.Save(settings); err != nil {
+		return err
+	}
 	// set auth settings
 	usersCollection, err := e.App.FindCollectionByNameOrId("users")
 	if err != nil {
@@ -156,7 +164,7 @@ func (h *Hub) initialize(e *core.ServeEvent) error {
 	return nil
 }
 
-// startServer starts the server for the Beszel (not PocketBase)
+// startServer sets up the server for Beszel
 func (h *Hub) startServer(se *core.ServeEvent) error {
 	// TODO: exclude dev server from production binary
 	switch h.IsDev() {
@@ -180,6 +188,7 @@ func (h *Hub) startServer(se *core.ServeEvent) error {
 		indexFile, _ := fs.ReadFile(site.DistDirFS, "index.html")
 		indexContent := strings.ReplaceAll(string(indexFile), "./", basePath)
 		indexContent = strings.Replace(indexContent, "{{V}}", beszel.Version, 1)
+		indexContent = strings.Replace(indexContent, "{{HUB_URL}}", h.appURL, 1)
 		// set up static asset serving
 		staticPaths := [2]string{"/static/", "/assets/"}
 		serveStatic := apis.Static(site.DistDirFS, false)
@@ -206,7 +215,7 @@ func (h *Hub) startServer(se *core.ServeEvent) error {
 
 // registerCronJobs sets up scheduled tasks
 func (h *Hub) registerCronJobs(_ *core.ServeEvent) error {
-	// delete old records once every hour
+	// delete old system_stats and alerts_history records once every hour
 	h.Cron().MustAdd("delete old records", "8 * * * *", h.rm.DeleteOldRecords)
 	// create longer records every 10 minutes
 	h.Cron().MustAdd("create longer records", "*/10 * * * *", h.rm.CreateLongerRecords)
@@ -231,7 +240,11 @@ func (h *Hub) registerApiRoutes(se *core.ServeEvent) error {
 	// send test notification
 	se.Router.GET("/api/beszel/send-test-notification", h.SendTestNotification)
 	// API endpoint to get config.yml content
-	se.Router.GET("/api/beszel/config-yaml", h.getYamlConfig)
+	se.Router.GET("/api/beszel/config-yaml", config.GetYamlConfig)
+	// handle agent websocket connection
+	se.Router.GET("/api/beszel/agent-connect", h.handleAgentConnect)
+	// get or create universal tokens
+	se.Router.GET("/api/beszel/universal-token", h.getUniversalToken)
 	// create first user endpoint only needed if no users exist
 	if totalUsers, _ := h.CountRecords("users"); totalUsers == 0 {
 		se.Router.POST("/api/beszel/create-user", h.um.CreateFirstUser)
@@ -239,73 +252,100 @@ func (h *Hub) registerApiRoutes(se *core.ServeEvent) error {
 	return nil
 }
 
-// generates key pair if it doesn't exist and returns private key bytes
-func (h *Hub) GetSSHKey() ([]byte, error) {
-	dataDir := h.DataDir()
-	// check if the key pair already exists
-	existingKey, err := os.ReadFile(dataDir + "/id_ed25519")
-	if err == nil {
-		if pubKey, err := os.ReadFile(h.DataDir() + "/id_ed25519.pub"); err == nil {
-			h.pubKey = strings.TrimSuffix(string(pubKey), "\n")
+// Handler for universal token API endpoint (create, read, delete)
+func (h *Hub) getUniversalToken(e *core.RequestEvent) error {
+	info, err := e.RequestInfo()
+	if err != nil || info.Auth == nil {
+		return apis.NewForbiddenError("Forbidden", nil)
+	}
+
+	tokenMap := universalTokenMap.GetMap()
+	userID := info.Auth.Id
+	query := e.Request.URL.Query()
+	token := query.Get("token")
+	tokenSet := token != ""
+
+	if !tokenSet {
+		// return existing token if it exists
+		if token, _, ok := tokenMap.GetByValue(userID); ok {
+			return e.JSON(http.StatusOK, map[string]any{"token": token, "active": true})
 		}
-		// return existing private key
-		return existingKey, nil
+		// if no token is provided, generate a new one
+		token = uuid.New().String()
+	}
+	response := map[string]any{"token": token}
+
+	switch query.Get("enable") {
+	case "1":
+		tokenMap.Set(token, userID, time.Hour)
+	case "0":
+		tokenMap.RemovebyValue(userID)
+	}
+	_, response["active"] = tokenMap.GetOk(token)
+	return e.JSON(http.StatusOK, response)
+}
+
+// generates key pair if it doesn't exist and returns signer
+func (h *Hub) GetSSHKey(dataDir string) (ssh.Signer, error) {
+	if h.signer != nil {
+		return h.signer, nil
+	}
+
+	if dataDir == "" {
+		dataDir = h.DataDir()
+	}
+
+	privateKeyPath := path.Join(dataDir, "id_ed25519")
+
+	// check if the key pair already exists
+	existingKey, err := os.ReadFile(privateKeyPath)
+	if err == nil {
+		private, err := ssh.ParsePrivateKey(existingKey)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse private key: %s", err)
+		}
+		pubKeyBytes := ssh.MarshalAuthorizedKey(private.PublicKey())
+		h.pubKey = strings.TrimSuffix(string(pubKeyBytes), "\n")
+		return private, nil
+	} else if !os.IsNotExist(err) {
+		// File exists but couldn't be read for some other reason
+		return nil, fmt.Errorf("failed to read %s: %w", privateKeyPath, err)
 	}
 
 	// Generate the Ed25519 key pair
-	pubKey, privKey, err := ed25519.GenerateKey(nil)
+	_, privKey, err := ed25519.GenerateKey(nil)
 	if err != nil {
-		// h.Logger().Error("Error generating key pair:", "err", err.Error())
 		return nil, err
 	}
-
-	// Get the private key in OpenSSH format
-	privKeyBytes, err := ssh.MarshalPrivateKey(privKey, "")
-	if err != nil {
-		// h.Logger().Error("Error marshaling private key:", "err", err.Error())
-		return nil, err
-	}
-
-	// Save the private key to a file
-	privateFile, err := os.Create(dataDir + "/id_ed25519")
-	if err != nil {
-		// h.Logger().Error("Error creating private key file:", "err", err.Error())
-		return nil, err
-	}
-	defer privateFile.Close()
-
-	if err := pem.Encode(privateFile, privKeyBytes); err != nil {
-		// h.Logger().Error("Error writing private key to file:", "err", err.Error())
-		return nil, err
-	}
-
-	// Generate the public key in OpenSSH format
-	publicKey, err := ssh.NewPublicKey(pubKey)
+	privKeyPem, err := ssh.MarshalPrivateKey(privKey, "")
 	if err != nil {
 		return nil, err
 	}
 
-	pubKeyBytes := ssh.MarshalAuthorizedKey(publicKey)
+	if err := os.WriteFile(privateKeyPath, pem.EncodeToMemory(privKeyPem), 0600); err != nil {
+		return nil, fmt.Errorf("failed to write private key to %q: err: %w", privateKeyPath, err)
+	}
+
+	// These are fine to ignore the errors on, as we've literally just created a crypto.PublicKey | crypto.Signer
+	sshPrivate, _ := ssh.NewSignerFromSigner(privKey)
+	pubKeyBytes := ssh.MarshalAuthorizedKey(sshPrivate.PublicKey())
 	h.pubKey = strings.TrimSuffix(string(pubKeyBytes), "\n")
 
-	// Save the public key to a file
-	publicFile, err := os.Create(dataDir + "/id_ed25519.pub")
-	if err != nil {
-		return nil, err
-	}
-	defer publicFile.Close()
+	h.Logger().Info("ed25519 key pair generated successfully.")
+	h.Logger().Info("Saved to: " + privateKeyPath)
 
-	if _, err := publicFile.Write(pubKeyBytes); err != nil {
-		return nil, err
-	}
+	return sshPrivate, err
+}
 
-	h.Logger().Info("ed25519 SSH key pair generated successfully.")
-	h.Logger().Info("Private key saved to: " + dataDir + "/id_ed25519")
-	h.Logger().Info("Public key saved to: " + dataDir + "/id_ed25519.pub")
-
-	existingKey, err = os.ReadFile(dataDir + "/id_ed25519")
-	if err == nil {
-		return existingKey, nil
+// MakeLink formats a link with the app URL and path segments.
+// Only path segments should be provided.
+func (h *Hub) MakeLink(parts ...string) string {
+	base := strings.TrimSuffix(h.Settings().Meta.AppURL, "/")
+	for _, part := range parts {
+		if part == "" {
+			continue
+		}
+		base = fmt.Sprintf("%s/%s", base, url.PathEscape(part))
 	}
-	return nil, err
+	return base
 }

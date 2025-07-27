@@ -73,7 +73,10 @@ GITHUB_URL="https://github.com"
 GITHUB_API_URL="https://api.github.com" # not blocked in China currently
 GITHUB_PROXY_URL=""
 KEY=""
+TOKEN=""
+HUB_URL=""
 AUTO_UPDATE_FLAG="" # empty string means prompt, "true" means auto-enable, "false" means skip
+VERSION="latest"
 
 # Check for help flag
 case "$1" in
@@ -83,6 +86,9 @@ case "$1" in
   printf "Options: \n"
   printf "  -k                    : SSH key (required, or interactive if not provided)\n"
   printf "  -p                    : Port (default: $PORT)\n"
+  printf "  -t                    : Token (optional for backwards compatibility)\n"
+  printf "  -url                  : Hub URL (optional for backwards compatibility)\n"
+  printf "  -v, --version         : Version to install (default: latest)\n"
   printf "  -u                    : Uninstall Beszel Agent\n"
   printf "  --auto-update [VALUE] : Control automatic daily updates\n"
   printf "                          VALUE can be true (enable) or false (disable). If not specified, will prompt.\n"
@@ -129,6 +135,18 @@ while [ $# -gt 0 ]; do
   -p)
     shift
     PORT="$1"
+    ;;
+  -t)
+    shift
+    TOKEN="$1"
+    ;;
+  -url)
+    shift
+    HUB_URL="$1"
+    ;;
+  -v | --version)
+    shift
+    VERSION="$1"
     ;;
   -u)
     UNINSTALL=true
@@ -264,7 +282,7 @@ if [ -n "$GITHUB_PROXY_URL" ]; then
   fi
 fi
 
-# Function to check if a package is installed
+# Check if a package is installed
 package_installed() {
   command -v "$1" >/dev/null 2>&1
 }
@@ -303,6 +321,9 @@ if [ -z "$KEY" ]; then
   read KEY
 fi
 
+# TOKEN and HUB_URL are optional for backwards compatibility - no interactive prompts
+# They will be set as empty environment variables if not provided
+
 # Verify checksum
 if command -v sha256sum >/dev/null; then
   CHECK_CMD="sha256sum"
@@ -316,18 +337,27 @@ fi
 # Create a dedicated user for the service if it doesn't exist
 if is_alpine; then
   if ! id -u beszel >/dev/null 2>&1; then
+    echo "Creating a dedicated group for the Beszel Agent service..."
+    addgroup beszel
     echo "Creating a dedicated user for the Beszel Agent service..."
-    adduser -D -H -s /sbin/nologin beszel
+    adduser -S -D -H -s /sbin/nologin -G beszel beszel
   fi
-  # Add the user to the docker group to allow access to the Docker socket
-  addgroup beszel docker
+  # Add the user to the docker group to allow access to the Docker socket if group docker exists
+  if getent group docker; then
+    echo "Adding beszel to docker group"
+    usermod -aG docker beszel
+  fi
+
 else
   if ! id -u beszel >/dev/null 2>&1; then
     echo "Creating a dedicated user for the Beszel Agent service..."
-    useradd -M -s /bin/false beszel
+    useradd --system --home-dir /nonexistent --shell /bin/false beszel
   fi
-  # Add the user to the docker group to allow access to the Docker socket
-  usermod -aG docker beszel
+  # Add the user to the docker group to allow access to the Docker socket if group docker exists
+  if getent group docker; then
+    echo "Adding beszel to docker group"
+    usermod -aG docker beszel
+  fi
 fi
 
 # Create the directory for the Beszel Agent
@@ -342,27 +372,35 @@ fi
 echo "Downloading and installing the agent..."
 
 OS=$(uname -s | sed -e 'y/ABCDEFGHIJKLMNOPQRSTUVWXYZ/abcdefghijklmnopqrstuvwxyz/')
-ARCH=$(uname -m | sed -e 's/x86_64/amd64/' -e 's/armv6l/arm/' -e 's/armv7l/arm/' -e 's/aarch64/arm64/')
+ARCH=$(uname -m | sed -e 's/x86_64/amd64/' -e 's/armv6l/arm/' -e 's/armv7l/arm/' -e 's/aarch64/arm64/' -e 's/mips/mipsle/')
 FILE_NAME="beszel-agent_${OS}_${ARCH}.tar.gz"
-LATEST_VERSION=$(curl -s "$GITHUB_API_URL""/repos/henrygd/beszel/releases/latest" | grep -o '"tag_name": "v[^"]*"' | cut -d'"' -f4 | tr -d 'v')
-if [ -z "$LATEST_VERSION" ]; then
-  echo "Failed to get latest version"
-  exit 1
+
+# Determine version to install
+if [ "$VERSION" = "latest" ]; then
+  INSTALL_VERSION=$(curl -s "$GITHUB_API_URL""/repos/henrygd/beszel/releases/latest" | grep -o '"tag_name": "v[^"]*"' | cut -d'"' -f4 | tr -d 'v')
+  if [ -z "$INSTALL_VERSION" ]; then
+    echo "Failed to get latest version"
+    exit 1
+  fi
+else
+  INSTALL_VERSION="$VERSION"
+  # Remove 'v' prefix if present
+  INSTALL_VERSION=$(echo "$INSTALL_VERSION" | sed 's/^v//')
 fi
 
-echo "Downloading and installing agent version ${LATEST_VERSION} from ${GITHUB_URL} ..."
+echo "Downloading and installing agent version ${INSTALL_VERSION} from ${GITHUB_URL} ..."
 
 # Download checksums file
 TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR" || exit 1
-CHECKSUM=$(curl -sL "$GITHUB_URL/henrygd/beszel/releases/download/v${LATEST_VERSION}/beszel_${LATEST_VERSION}_checksums.txt" | grep "$FILE_NAME" | cut -d' ' -f1)
+CHECKSUM=$(curl -sL "$GITHUB_URL/henrygd/beszel/releases/download/v${INSTALL_VERSION}/beszel_${INSTALL_VERSION}_checksums.txt" | grep "$FILE_NAME" | cut -d' ' -f1)
 if [ -z "$CHECKSUM" ] || ! echo "$CHECKSUM" | grep -qE "^[a-fA-F0-9]{64}$"; then
   echo "Failed to get checksum or invalid checksum format"
   exit 1
 fi
 
-if ! curl -#L "$GITHUB_URL/henrygd/beszel/releases/download/v${LATEST_VERSION}/$FILE_NAME" -o "$FILE_NAME"; then
-  echo "Failed to download the agent from ""$GITHUB_URL/henrygd/beszel/releases/download/v${LATEST_VERSION}/$FILE_NAME"
+if ! curl -#L "$GITHUB_URL/henrygd/beszel/releases/download/v${INSTALL_VERSION}/$FILE_NAME" -o "$FILE_NAME"; then
+  echo "Failed to download the agent from ""$GITHUB_URL/henrygd/beszel/releases/download/v${INSTALL_VERSION}/$FILE_NAME"
   rm -rf "$TEMP_DIR"
   exit 1
 fi
@@ -389,6 +427,17 @@ set_selinux_context
 # Cleanup
 rm -rf "$TEMP_DIR"
 
+# Check for NVIDIA GPUs and grant device permissions for systemd service
+detect_nvidia_devices() {
+  local devices=""
+  for i in /dev/nvidia*; do
+    if [ -e "$i" ]; then
+      devices="${devices}DeviceAllow=$i rw\n"
+    fi
+  done
+  echo "$devices"
+}
+
 # Modify service installation part, add Alpine check before systemd service creation
 if is_alpine; then
   echo "Creating OpenRC service for Alpine Linux..."
@@ -410,6 +459,8 @@ start_pre() {
 
 export PORT="$PORT"
 export KEY="$KEY"
+export TOKEN="$TOKEN"
+export HUB_URL="$HUB_URL"
 
 depend() {
     need net
@@ -497,6 +548,8 @@ start_service() {
     procd_set_param pidfile /var/run/beszel-agent.pid
     procd_set_param env PORT="$PORT"
     procd_set_param env KEY="$KEY"
+    procd_set_param env TOKEN="$TOKEN"
+    procd_set_param env HUB_URL="$HUB_URL"
     procd_set_param stdout 1
     procd_set_param stderr 1
     procd_close_instance
@@ -560,6 +613,10 @@ EOF
 else
   # Original systemd service installation code
   echo "Creating the systemd service for the agent..."
+
+  # Detect NVIDIA devices and grant device permissions
+  NVIDIA_DEVICES=$(detect_nvidia_devices)
+
   cat >/etc/systemd/system/beszel-agent.service <<EOF
 [Unit]
 Description=Beszel Agent Service
@@ -569,6 +626,8 @@ After=network-online.target
 [Service]
 Environment="PORT=$PORT"
 Environment="KEY=$KEY"
+Environment="TOKEN=$TOKEN"
+Environment="HUB_URL=$HUB_URL"
 # Environment="EXTRA_FILESYSTEMS=sdb"
 ExecStart=/opt/beszel-agent/beszel-agent
 User=beszel
@@ -580,7 +639,6 @@ StateDirectory=beszel-agent
 KeyringMode=private
 LockPersonality=yes
 NoNewPrivileges=yes
-PrivateTmp=yes
 ProtectClock=yes
 ProtectHome=read-only
 ProtectHostname=yes
@@ -588,7 +646,8 @@ ProtectKernelLogs=yes
 ProtectSystem=strict
 RemoveIPC=yes
 RestrictSUIDSGID=true
-SystemCallArchitectures=native
+
+$(if [ -n "$NVIDIA_DEVICES" ]; then printf "%b" "# NVIDIA device permissions\n${NVIDIA_DEVICES}"; fi)
 
 [Install]
 WantedBy=multi-user.target

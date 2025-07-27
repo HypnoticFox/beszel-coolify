@@ -8,7 +8,7 @@ msgstr ""
 "Language: zh\n"
 "Project-Id-Version: beszel\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2025-03-06 07:27\n"
+"PO-Revision-Date: 2025-07-25 22:44\n"
 "Last-Translator: \n"
 "Language-Team: Chinese Traditional, Hong Kong\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -23,6 +23,12 @@ msgstr ""
 msgid "{0, plural, one {# day} other {# days}}"
 msgstr "{0, plural, one {# 天} other {# 天}}"
 
+#. placeholder {0}: table.getFilteredSelectedRowModel().rows.length
+#. placeholder {1}: table.getFilteredRowModel().rows.length
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "{0} of {1} row(s) selected."
+msgstr "已選擇 {1} 個項目中的 {0} 個"
+
 #: src/components/routes/system.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, one {# 小時} other {# 小時}}"
@@ -30,6 +36,11 @@ msgstr "{hours, plural, one {# 小時} other {# 小時}}"
 #: src/lib/utils.ts
 msgid "1 hour"
 msgstr "1小時"
+
+#. Load average
+#: src/components/charts/load-average-chart.tsx
+msgid "1 min"
+msgstr "1 分鐘"
 
 #: src/lib/utils.ts
 msgid "1 week"
@@ -39,6 +50,11 @@ msgstr "1週"
 msgid "12 hours"
 msgstr "12小時"
 
+#. Load average
+#: src/components/charts/load-average-chart.tsx
+msgid "15 min"
+msgstr "15 分鐘"
+
 #: src/lib/utils.ts
 msgid "24 hours"
 msgstr "24小時"
@@ -47,10 +63,21 @@ msgstr "24小時"
 msgid "30 days"
 msgstr "30天"
 
+#. Load average
+#: src/components/charts/load-average-chart.tsx
+msgid "5 min"
+msgstr "5 分鐘"
+
 #. Table column
 #: src/components/systems-table/systems-table.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Actions"
 msgstr "操作"
+
+#: src/components/alerts-history-columns.tsx
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "Active"
+msgstr "啟用中"
 
 #: src/components/routes/home.tsx
 msgid "Active Alerts"
@@ -78,15 +105,18 @@ msgstr "調整圖表的顯示選項。"
 
 #: src/components/command-palette.tsx
 #: src/components/command-palette.tsx
-#: src/components/command-palette.tsx
-#: src/components/command-palette.tsx
-#: src/components/command-palette.tsx
 msgid "Admin"
 msgstr "管理員"
 
 #: src/components/systems-table/systems-table.tsx
 msgid "Agent"
 msgstr "客户端"
+
+#: src/components/command-palette.tsx
+#: src/components/routes/settings/layout.tsx
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "Alert History"
+msgstr "警報歷史"
 
 #: src/components/alerts/alert-button.tsx
 #: src/components/alerts/alert-button.tsx
@@ -101,6 +131,10 @@ msgstr "所有系統"
 #: src/components/systems-table/systems-table.tsx
 msgid "Are you sure you want to delete {name}?"
 msgstr "您確定要刪除 {name} 嗎？"
+
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "Are you sure?"
+msgstr "您確定嗎？"
 
 #: src/components/copy-to-clipboard.tsx
 msgid "Automatic copy requires a secure context."
@@ -154,17 +188,36 @@ msgstr "Beszel 使用 <0>Shoutrrr</0> 與流行的通知服務集成。"
 msgid "Binary"
 msgstr "執行檔"
 
+#: src/components/routes/settings/general.tsx
+#: src/components/routes/settings/general.tsx
+msgid "Bits (Kbps, Mbps, Gbps)"
+msgstr "位元 (Kbps, Mbps, Gbps)"
+
+#: src/components/routes/settings/general.tsx
+#: src/components/routes/settings/general.tsx
+msgid "Bytes (KB/s, MB/s, GB/s)"
+msgstr "位元組 (KB/s, MB/s, GB/s)"
+
 #: src/components/charts/mem-chart.tsx
 msgid "Cache / Buffers"
 msgstr "快取 / 緩衝區"
 
 #: src/components/systems-table/systems-table.tsx
+#: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Cancel"
 msgstr "取消"
 
 #: src/components/routes/settings/config-yaml.tsx
 msgid "Caution - potential data loss"
 msgstr "注意 - 可能遺失資料"
+
+#: src/components/routes/settings/general.tsx
+msgid "Celsius (°C)"
+msgstr "攝氏 (°C)"
+
+#: src/components/routes/settings/general.tsx
+msgid "Change display units for metrics."
+msgstr "更改指標的顯示單位。"
 
 #: src/components/routes/settings/general.tsx
 msgid "Change general application options."
@@ -186,7 +239,7 @@ msgstr "檢查日誌以取得更多資訊。"
 msgid "Check your notification service"
 msgstr "檢查您的通知服務"
 
-#: src/components/add-system.tsx
+#: src/components/ui/input-copy.tsx
 msgid "Click to copy"
 msgstr "點擊以複製"
 
@@ -204,7 +257,12 @@ msgstr "配置您接收警報通知的方式。"
 msgid "Confirm password"
 msgstr "確認密碼"
 
+#: src/components/routes/home.tsx
+msgid "Connection is down"
+msgstr "連線中斷"
+
 #: src/components/systems-table/systems-table.tsx
+#: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Continue"
 msgstr "繼續"
 
@@ -213,20 +271,28 @@ msgid "Copied to clipboard"
 msgstr "已複製到剪貼板"
 
 #: src/components/add-system.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy docker compose file content"
 msgid "Copy docker compose"
 msgstr "複製 docker compose"
 
 #: src/components/add-system.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy docker run command"
 msgid "Copy docker run"
 msgstr "複製 docker run"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgctxt "Environment variables"
+msgid "Copy env"
+msgstr "複製環境變數"
 
 #: src/components/systems-table/systems-table.tsx
 msgid "Copy host"
 msgstr "複製主機"
 
 #: src/components/add-system.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Copy Linux command"
 msgstr "複製 Linux 指令"
 
@@ -234,19 +300,36 @@ msgstr "複製 Linux 指令"
 msgid "Copy text"
 msgstr "複製文本"
 
+#: src/components/add-system.tsx
+msgid "Copy the installation command for the agent below, or register agents automatically with a <0>universal token</0>."
+msgstr "複製下面的代理程式安裝指令，或使用<0>通用令牌</0>自動註冊代理程式。"
+
+#: src/components/add-system.tsx
+msgid "Copy the<0>docker-compose.yml</0> content for the agent below, or register agents automatically with a <1>universal token</1>."
+msgstr "複製下面的代理程式<0>docker-compose.yml</0>內容，或使用<1>通用令牌</1>自動註冊代理程式。"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Copy YAML"
+msgstr "複製YAML"
+
 #: src/components/systems-table/systems-table.tsx
 msgid "CPU"
 msgstr "CPU"
 
 #: src/lib/utils.ts
 #: src/components/routes/system.tsx
-#: src/components/charts/area-chart.tsx
+#: src/components/routes/system.tsx
 msgid "CPU Usage"
 msgstr "CPU 使用率"
 
 #: src/components/login/auth-form.tsx
 msgid "Create account"
 msgstr "創建帳戶"
+
+#. Context: date created
+#: src/components/alerts-history-columns.tsx
+msgid "Created"
+msgstr "已建立"
 
 #. Dark theme
 #: src/components/mode-toggle.tsx
@@ -263,8 +346,13 @@ msgid "Default time period"
 msgstr "預設時間段"
 
 #: src/components/systems-table/systems-table.tsx
+#: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Delete"
 msgstr "刪除"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Delete fingerprint"
+msgstr "刪除指紋"
 
 #: src/components/systems-table/systems-table.tsx
 msgid "Disk"
@@ -273,6 +361,10 @@ msgstr "磁碟"
 #: src/components/routes/system.tsx
 msgid "Disk I/O"
 msgstr "磁碟 I/O"
+
+#: src/components/routes/settings/general.tsx
+msgid "Disk unit"
+msgstr "磁碟單位"
 
 #: src/lib/utils.ts
 #: src/components/routes/system.tsx
@@ -302,10 +394,15 @@ msgstr "文件"
 
 #. Context: System is down
 #: src/lib/utils.ts
+#: src/components/alerts-history-columns.tsx
 #: src/components/systems-table/systems-table.tsx
 #: src/components/routes/system.tsx
 msgid "Down"
-msgstr ""
+msgstr "中斷"
+
+#: src/components/alerts-history-columns.tsx
+msgid "Duration"
+msgstr "持續時間"
 
 #: src/components/add-system.tsx
 #: src/components/systems-table/systems-table.tsx
@@ -329,8 +426,10 @@ msgstr "輸入電子郵件地址以重置密碼"
 msgid "Enter email address..."
 msgstr "輸入電子郵件地址..."
 
+#: src/components/routes/settings/tokens-fingerprints.tsx
 #: src/components/routes/settings/notifications.tsx
 #: src/components/routes/settings/config-yaml.tsx
+#: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/login/auth-form.tsx
 msgid "Error"
 msgstr "錯誤"
@@ -346,6 +445,10 @@ msgstr "在過去的{2, plural, one {# 分鐘} other {# 分鐘}}中超過{0}{1}"
 msgid "Existing systems not defined in <0>config.yml</0> will be deleted. Please make regular backups."
 msgstr "未在<0>config.yml</0>中定義的現有系統將被刪除。請定期備份。"
 
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "Export"
+msgstr "匯出"
+
 #: src/components/routes/settings/config-yaml.tsx
 msgid "Export configuration"
 msgstr "匯出設定"
@@ -353,6 +456,10 @@ msgstr "匯出設定"
 #: src/components/routes/settings/config-yaml.tsx
 msgid "Export your current systems configuration."
 msgstr "匯出您現在的系統設定。"
+
+#: src/components/routes/settings/general.tsx
+msgid "Fahrenheit (°F)"
+msgstr "華氏 (°F)"
 
 #: src/lib/utils.ts
 msgid "Failed to authenticate"
@@ -373,8 +480,13 @@ msgstr "更新警報失敗"
 
 #: src/components/systems-table/systems-table.tsx
 #: src/components/routes/system.tsx
+#: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Filter..."
 msgstr "篩選..."
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Fingerprint"
+msgstr "指紋"
 
 #: src/components/alerts/alerts-system.tsx
 msgid "For <0>{min}</0> {min, plural, one {minute} other {minutes}}"
@@ -399,6 +511,7 @@ msgid "Grid"
 msgstr "網格"
 
 #: src/components/add-system.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy install command"
 msgid "Homebrew command"
 msgstr "Homebrew 指令"
@@ -432,6 +545,27 @@ msgstr "版面配置"
 #: src/components/mode-toggle.tsx
 msgid "Light"
 msgstr "淺色"
+
+#: src/components/routes/system.tsx
+msgid "Load Average"
+msgstr "平均負載"
+
+#: src/lib/utils.ts
+msgid "Load Average 15m"
+msgstr "15分鐘平均負載"
+
+#: src/lib/utils.ts
+msgid "Load Average 1m"
+msgstr "1分鐘平均負載"
+
+#: src/lib/utils.ts
+msgid "Load Average 5m"
+msgstr "5分鐘平均負載"
+
+#. Short label for load average
+#: src/components/systems-table/systems-table.tsx
+msgid "Load Avg"
+msgstr "平均負載"
 
 #: src/components/navbar.tsx
 msgid "Log Out"
@@ -481,6 +615,7 @@ msgstr "記憶體使用"
 msgid "Memory usage of docker containers"
 msgstr "Docker 容器的記憶體使用量"
 
+#: src/components/alerts-history-columns.tsx
 #: src/components/add-system.tsx
 msgid "Name"
 msgstr "名稱"
@@ -497,9 +632,18 @@ msgstr "Docker 容器的網絡流量"
 msgid "Network traffic of public interfaces"
 msgstr "公共接口的網絡流量"
 
+#. Context: Bytes or bits
+#: src/components/routes/settings/general.tsx
+msgid "Network unit"
+msgstr "網路單位"
+
 #: src/components/command-palette.tsx
 msgid "No results found."
 msgstr "未找到結果。"
+
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "No results."
+msgstr "沒有結果。"
 
 #: src/components/systems-table/systems-table.tsx
 #: src/components/systems-table/systems-table.tsx
@@ -521,6 +665,8 @@ msgid "On each restart, systems in the database will be updated to match the sys
 msgstr "每次重新啟動時，將會以檔案中的系統定義更新資料庫。"
 
 #: src/components/systems-table/systems-table.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Open menu"
 msgstr "開啟選單"
 
@@ -535,6 +681,12 @@ msgstr "覆蓋現有警報"
 #: src/components/command-palette.tsx
 msgid "Page"
 msgstr "頁面"
+
+#. placeholder {0}: table.getState().pagination.pageIndex + 1
+#. placeholder {1}: table.getPageCount()
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "Page {0} of {1}"
+msgstr "第 {0} 頁，共 {1} 頁"
 
 #: src/components/command-palette.tsx
 msgid "Pages / Settings"
@@ -617,13 +769,12 @@ msgid "Public Key"
 msgstr "公鑰"
 
 #. Disk read
-#: src/components/charts/area-chart.tsx
-#: src/components/charts/area-chart.tsx
+#: src/components/routes/system.tsx
+#: src/components/routes/system.tsx
 msgid "Read"
 msgstr "讀取"
 
-#. Network bytes received (download)
-#: src/components/charts/area-chart.tsx
+#: src/components/routes/system.tsx
 msgid "Received"
 msgstr "接收"
 
@@ -631,9 +782,23 @@ msgstr "接收"
 msgid "Reset Password"
 msgstr "重設密碼"
 
+#: src/components/alerts-history-columns.tsx
+#: src/components/alerts-history-columns.tsx
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "Resolved"
+msgstr "已解決"
+
 #: src/components/systems-table/systems-table.tsx
 msgid "Resume"
 msgstr "恢復"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Rotate token"
+msgstr "輪換令牌"
+
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "Rows per page"
+msgstr "每頁行數"
 
 #: src/components/routes/settings/notifications.tsx
 msgid "Save address using enter key or comma. Leave blank to disable email notifications."
@@ -660,8 +825,7 @@ msgstr "搜索系統或設置..."
 msgid "See <0>notification settings</0> to configure how you receive alerts."
 msgstr "查看<0>通知設置</0>以配置您接收警報的方式。"
 
-#. Network bytes sent (upload)
-#: src/components/charts/area-chart.tsx
+#: src/components/routes/system.tsx
 msgid "Sent"
 msgstr "發送"
 
@@ -669,7 +833,6 @@ msgstr "發送"
 msgid "Sets the default time range for charts when a system is viewed."
 msgstr "設置查看系統時圖表的默認時間範圍。"
 
-#: src/components/command-palette.tsx
 #: src/components/command-palette.tsx
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -693,6 +856,11 @@ msgstr "SMTP設置"
 msgid "Sort By"
 msgstr "排序依據"
 
+#. Context: alert state (active or resolved)
+#: src/components/alerts-history-columns.tsx
+msgid "State"
+msgstr "狀態"
+
 #: src/lib/utils.ts
 msgid "Status"
 msgstr "狀態"
@@ -708,9 +876,15 @@ msgstr "交換使用"
 #. System theme
 #: src/lib/utils.ts
 #: src/components/mode-toggle.tsx
+#: src/components/alerts-history-columns.tsx
 #: src/components/systems-table/systems-table.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "System"
 msgstr "系統"
+
+#: src/components/routes/system.tsx
+msgid "System load averages over time"
+msgstr "系統平均負載隨時間變化"
 
 #: src/components/navbar.tsx
 msgid "Systems"
@@ -734,6 +908,10 @@ msgstr "溫度"
 msgid "Temperature"
 msgstr "溫度"
 
+#: src/components/routes/settings/general.tsx
+msgid "Temperature unit"
+msgstr "溫度單位"
+
 #: src/components/routes/system.tsx
 msgid "Temperatures of system sensors"
 msgstr "系統傳感器的溫度"
@@ -746,14 +924,6 @@ msgstr "測試<0>URL</0>"
 msgid "Test notification sent"
 msgstr "測試通知已發送"
 
-#: src/components/add-system.tsx
-msgid "The agent must be running on the system to connect. Copy the installation command for the agent below."
-msgstr "代理必須在系統上運行才能連接。複製下面的代理安裝命令。"
-
-#: src/components/add-system.tsx
-msgid "The agent must be running on the system to connect. Copy the<0>docker-compose.yml</0> for the agent below."
-msgstr "代理必須在系統上運行才能連接。複製下面的<0>docker-compose.yml</0>。"
-
 #: src/components/login/forgot-pass-form.tsx
 msgid "Then log into the backend and reset your user account password in the users table."
 msgstr "然後登錄到後端並在用戶表中重置您的用戶帳戶密碼。"
@@ -761,6 +931,10 @@ msgstr "然後登錄到後端並在用戶表中重置您的用戶帳戶密碼。
 #: src/components/systems-table/systems-table.tsx
 msgid "This action cannot be undone. This will permanently delete all current records for {name} from the database."
 msgstr "此操作無法撤銷。這將永久刪除數據庫中{name}的所有當前記錄。"
+
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "This will permanently delete all selected records from the database."
+msgstr "這將從資料庫中永久刪除所有選定的記錄。"
 
 #: src/components/routes/system.tsx
 msgid "Throughput of {extraFsName}"
@@ -782,6 +956,37 @@ msgstr "切換網格"
 #: src/components/mode-toggle.tsx
 msgid "Toggle theme"
 msgstr "切換主題"
+
+#: src/components/add-system.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Token"
+msgstr "令牌"
+
+#: src/components/command-palette.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
+#: src/components/routes/settings/layout.tsx
+msgid "Tokens & Fingerprints"
+msgstr "令牌和指紋"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Tokens allow agents to connect and register. Fingerprints are stable identifiers unique to each system, set on first connection."
+msgstr "令牌允許代理程式連接和註冊。指紋是每個系統唯一的穩定識別符，在首次連接時設置。"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Tokens and fingerprints are used to authenticate WebSocket connections to the hub."
+msgstr "令牌和指紋用於驗證到中心的WebSocket連接。"
+
+#: src/lib/utils.ts
+msgid "Triggers when 1 minute load average exceeds a threshold"
+msgstr "當 1 分鐘平均負載超過閾值時觸發"
+
+#: src/lib/utils.ts
+msgid "Triggers when 15 minute load average exceeds a threshold"
+msgstr "當 15 分鐘平均負載超過閾值時觸發"
+
+#: src/lib/utils.ts
+msgid "Triggers when 5 minute load average exceeds a threshold"
+msgstr "當 5 分鐘平均負載超過閾值時觸發"
 
 #: src/lib/utils.ts
 msgid "Triggers when any sensor exceeds a threshold"
@@ -807,11 +1012,20 @@ msgstr "當狀態在上和下之間切換時觸發"
 msgid "Triggers when usage of any disk exceeds a threshold"
 msgstr "當任何磁碟的使用超過閾值時觸發"
 
+#. Temperature / network units
+#: src/components/routes/settings/general.tsx
+msgid "Unit preferences"
+msgstr "單位偏好"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Universal token"
+msgstr "通用令牌"
+
 #. Context: System is up
 #: src/components/systems-table/systems-table.tsx
 #: src/components/routes/system.tsx
 msgid "Up"
-msgstr ""
+msgstr "上線"
 
 #: src/components/systems-table/systems-table.tsx
 msgid "Updated in real time. Click on a system to view information."
@@ -823,7 +1037,8 @@ msgstr "正常運行時間"
 
 #: src/components/routes/system.tsx
 #: src/components/routes/system.tsx
-#: src/components/charts/area-chart.tsx
+#: src/components/routes/system.tsx
+#: src/components/routes/system.tsx
 msgid "Usage"
 msgstr "使用"
 
@@ -833,7 +1048,6 @@ msgstr "根分區的使用"
 
 #: src/components/charts/swap-chart.tsx
 #: src/components/charts/mem-chart.tsx
-#: src/components/charts/area-chart.tsx
 msgid "Used"
 msgstr "已用"
 
@@ -842,9 +1056,17 @@ msgstr "已用"
 msgid "Users"
 msgstr "用戶"
 
+#: src/components/alerts-history-columns.tsx
+msgid "Value"
+msgstr "值"
+
 #: src/components/systems-table/systems-table.tsx
 msgid "View"
 msgstr "檢視"
+
+#: src/components/routes/settings/alerts-history-data-table.tsx
+msgid "View your 200 most recent alerts."
+msgstr "檢視最近 200 則警報。"
 
 #: src/components/systems-table/systems-table.tsx
 msgid "Visible Fields"
@@ -862,14 +1084,19 @@ msgstr "想幫助我們改進翻譯嗎？查看<0>Crowdin</0>以獲取更多詳�
 msgid "Webhook / Push notifications"
 msgstr "Webhook / 推送通知"
 
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "When enabled, this token allows agents to self-register without prior system creation. Expires after one hour or on hub restart."
+msgstr "啟用時，此令牌允許代理程式在無需預先創建系統的情況下自動註冊。在一小時後或中心重啟時過期。"
+
 #: src/components/add-system.tsx
+#: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy install command"
 msgid "Windows command"
 msgstr "Windows 指令"
 
 #. Disk write
-#: src/components/charts/area-chart.tsx
-#: src/components/charts/area-chart.tsx
+#: src/components/routes/system.tsx
+#: src/components/routes/system.tsx
 msgid "Write"
 msgstr "寫入"
 
