@@ -376,7 +376,10 @@ func parseDockerStatus(status string) (string, container.DockerHealth) {
 
 // Updates stats for individual container with cache-time-aware delta tracking
 func (dm *dockerManager) updateContainerStats(ctr *container.ApiInfo, cacheTimeMs uint16) error {
-	name := ctr.Names[0][1:]
+	name := ctr.Labels["coolify.serviceName"]
+	if name == "" {
+		name = ctr.Names[0][1:]
+	}
 
 	resp, err := dm.client.Get(fmt.Sprintf("http://localhost/containers/%s/stats?stream=0&one-shot=1", ctr.IdShort))
 	if err != nil {
