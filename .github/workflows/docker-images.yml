@@ -27,7 +27,7 @@ jobs:
               type=raw,value={{sha}},enable=${{ github.ref_type != 'tag' }}
 
           # hypnoticfox/beszel-coolify-agent
-          - image: henrygd/beszel-agent
+          - image: hypnoticfox/beszel-coolify-agent
             dockerfile: ./internal/dockerfile_agent
             registry: docker.io
             username_secret: DOCKERHUB_USERNAME
