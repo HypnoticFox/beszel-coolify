@@ -8,7 +8,7 @@ msgstr ""
 "Language: tr\n"
 "Project-Id-Version: beszel\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2025-11-14 22:51\n"
+"PO-Revision-Date: 2026-01-31 21:16\n"
 "Last-Translator: \n"
 "Language-Team: Turkish\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -24,6 +24,10 @@ msgstr ""
 msgid "{0} of {1} row(s) selected."
 msgstr "{1} satırdan {0} tanesi seçildi."
 
+#: src/components/routes/system/info-bar.tsx
+msgid "{cores, plural, one {# core} other {# cores}}"
+msgstr "{cores, plural, one {# çekirdek} other {# çekirdek}}"
+
 #: src/lib/utils.ts
 msgid "{count, plural, one {{countString} day} other {{countString} days}}"
 msgstr "{count, plural, one {{countString} gün} other {{countString} gün}}"
@@ -35,6 +39,10 @@ msgstr "{count, plural, one {{countString} saat} other {{countString} saat}}"
 #: src/lib/utils.ts
 msgid "{count, plural, one {{countString} minute} few {{countString} minutes} many {{countString} minutes} other {{countString} minutes}}"
 msgstr "{count, plural, one {{countString} dakika} few {{countString} dakika} many {{countString} dakika} other {{countString} dakika}}"
+
+#: src/components/routes/system/info-bar.tsx
+msgid "{threads, plural, one {# thread} other {# threads}}"
+msgstr "{threads, plural, one {# iş parçacığı} other {# iş parçacığı}}"
 
 #: src/lib/utils.ts
 msgid "1 hour"
@@ -85,6 +93,7 @@ msgstr "Eylemler"
 
 #: src/components/alerts-history-columns.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
+#: src/components/routes/settings/heartbeat.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Active"
 msgstr "Aktif"
@@ -132,6 +141,10 @@ msgstr "Yönetici"
 msgid "After"
 msgstr "Sonra"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "After setting the environment variables, restart your Beszel hub for changes to take effect."
+msgstr "Ortam değişkenlerini ayarladıktan sonra, değişikliklerin etkili olması için Beszel hub'ınızı yeniden başlatın."
+
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "Agent"
 msgstr "Aracı"
@@ -149,6 +162,7 @@ msgstr "Uyarılar"
 
 #: src/components/command-palette.tsx
 #: src/components/containers-table/containers-table.tsx
+#: src/components/navbar.tsx
 #: src/components/routes/containers.tsx
 msgid "All Containers"
 msgstr "Tüm Konteynerler"
@@ -184,6 +198,11 @@ msgstr "Konteynerlerin ortalama CPU kullanımı"
 
 #. placeholder {0}: alertData.unit
 #: src/components/alerts/alerts-sheet.tsx
+msgid "Average drops below <0>{value}{0}</0>"
+msgstr "Ortalama <0>{value}{0}</0> altına düşüyor"
+
+#. placeholder {0}: alertData.unit
+#: src/components/alerts/alerts-sheet.tsx
 msgid "Average exceeds <0>{value}{0}</0>"
 msgstr "Ortalama <0>{value}{0}</0> aşıyor"
 
@@ -214,7 +233,13 @@ msgstr "Yedekler"
 msgid "Bandwidth"
 msgstr "Bant Genişliği"
 
+#. Battery label in systems table header
+#: src/components/systems-table/systems-table-columns.tsx
+msgid "Bat"
+msgstr "Pil"
+
 #: src/components/routes/system.tsx
+#: src/lib/alerts.ts
 msgid "Battery"
 msgstr "Pil"
 
@@ -229,6 +254,13 @@ msgstr "Pasif oldu"
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Before"
 msgstr "Önce"
+
+#. placeholder {0}: alert.value
+#. placeholder {1}: info.unit
+#. placeholder {2}: alert.min
+#: src/components/active-alerts.tsx
+msgid "Below {0}{1} in last {2, plural, one {# minute} other {# minutes}}"
+msgstr "Son {2, plural, one {# dakika} other {# dakika}} içinde {0}{1} altında"
 
 #: src/components/login/auth-form.tsx
 msgid "Beszel supports OpenID Connect and many OAuth2 authentication providers."
@@ -322,6 +354,10 @@ msgstr "Sıfırlama bağlantısı için {email} kontrol edin."
 #: src/components/routes/settings/layout.tsx
 msgid "Check logs for more details."
 msgstr "Daha fazla ayrıntı için günlükleri kontrol edin."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Check your monitoring service"
+msgstr "İzleme servisinizi kontrol edin"
 
 #: src/components/routes/settings/notifications.tsx
 msgid "Check your notification service"
@@ -430,7 +466,7 @@ msgstr "YAML'ı kopyala"
 #: src/components/systemd-table/systemd-table-columns.tsx
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "CPU"
-msgstr ""
+msgstr "CPU"
 
 #: src/components/routes/system/cpu-sheet.tsx
 msgid "CPU Cores"
@@ -529,7 +565,7 @@ msgstr "Boşalıyor"
 
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "Disk"
-msgstr ""
+msgstr "Disk"
 
 #: src/components/routes/system.tsx
 msgid "Disk I/O"
@@ -568,7 +604,7 @@ msgstr "Dokümantasyon"
 
 #. Context: System is down
 #: src/components/alerts-history-columns.tsx
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table-columns.tsx
 #: src/lib/alerts.ts
 msgid "Down"
@@ -616,6 +652,14 @@ msgstr "Boş"
 msgid "End Time"
 msgstr "Bitiş Saati"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Endpoint URL"
+msgstr "Uç Nokta URL'si"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Endpoint URL to ping (required)"
+msgstr "Ping atılacak uç nokta URL'si (gerekli)"
+
 #: src/components/login/login.tsx
 msgid "Enter email address to reset password"
 msgstr "Şifreyi sıfırlamak için e-posta adresini girin"
@@ -628,9 +672,16 @@ msgstr "E-posta adresini girin..."
 msgid "Enter your one-time password."
 msgstr "Tek kullanımlık şifrenizi girin."
 
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Ephemeral"
+msgstr "Geçici"
+
 #: src/components/login/auth-form.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/config-yaml.tsx
+#: src/components/routes/settings/heartbeat.tsx
+#: src/components/routes/settings/heartbeat.tsx
+#: src/components/routes/settings/heartbeat.tsx
 #: src/components/routes/settings/notifications.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/settings/quiet-hours.tsx
@@ -638,6 +689,10 @@ msgstr "Tek kullanımlık şifrenizi girin."
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Error"
 msgstr "Hata"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Example:"
+msgstr "Örnek:"
 
 #. placeholder {0}: alert.value
 #. placeholder {1}: info.unit
@@ -657,6 +712,10 @@ msgstr "<0>config.yml</0> içinde tanımlanmayan mevcut sistemler silinecektir. 
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Exited active"
 msgstr "Aktif olarak çıktı"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Expires after one hour or on hub restart."
+msgstr "Bir saat sonra veya hub yeniden başlatıldığında sona erer."
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -691,6 +750,10 @@ msgstr "Kimlik doğrulama başarısız"
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Failed to save settings"
 msgstr "Ayarlar kaydedilemedi"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Failed to send heartbeat"
+msgstr "Heartbeat gönderilemedi"
 
 #: src/components/routes/settings/notifications.tsx
 msgid "Failed to send test notification"
@@ -771,6 +834,18 @@ msgstr "Izgara"
 msgid "Health"
 msgstr "Sağlık"
 
+#: src/components/routes/settings/layout.tsx
+msgid "Heartbeat"
+msgstr "Heartbeat"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Heartbeat Monitoring"
+msgstr "Heartbeat İzleme"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Heartbeat sent successfully"
+msgstr "Heartbeat başarıyla gönderildi"
+
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy install command"
@@ -780,6 +855,14 @@ msgstr "Homebrew komutu"
 #: src/components/add-system.tsx
 msgid "Host / IP"
 msgstr "Ana Bilgisayar / IP"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "HTTP Method"
+msgstr "HTTP Yöntemi"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "HTTP method: POST, GET, or HEAD (default: POST)"
+msgstr "HTTP yöntemi: POST, GET veya HEAD (varsayılan: POST)"
 
 #. Context: Battery state
 #: src/lib/i18n.ts
@@ -799,15 +882,15 @@ msgstr "İmaj"
 msgid "Inactive"
 msgstr "Pasif"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Interval"
+msgstr "Aralık"
+
 #: src/components/login/auth-form.tsx
 msgid "Invalid email address."
 msgstr "Geçersiz e-posta adresi."
 
-#. Linux kernel
-#: src/components/routes/system.tsx
-msgid "Kernel"
-msgstr "Çekirdek"
-
+#: src/components/lang-toggle.tsx
 #: src/components/routes/settings/general.tsx
 msgid "Language"
 msgstr "Dil"
@@ -900,6 +983,7 @@ msgid "Max 1 min"
 msgstr "Maks 1 dk"
 
 #: src/components/containers-table/containers-table-columns.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systemd-table/systemd-table-columns.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systems-table/systems-table-columns.tsx
@@ -926,7 +1010,7 @@ msgstr "Docker konteynerlerinin bellek kullanımı"
 
 #: src/components/routes/system/smart-table.tsx
 msgid "Model"
-msgstr ""
+msgstr "Model"
 
 #: src/components/add-system.tsx
 #: src/components/alerts-history-columns.tsx
@@ -1064,7 +1148,7 @@ msgstr "Şifre sıfırlama isteği alındı"
 
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Past"
-msgstr ""
+msgstr "Geçmiş"
 
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "Pause"
@@ -1078,6 +1162,10 @@ msgstr "Duraklatıldı"
 msgid "Paused ({pausedSystemsLength})"
 msgstr "Duraklatıldı ({pausedSystemsLength})"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Payload format"
+msgstr "Yük (Payload) formatı"
+
 #: src/components/routes/system/cpu-sheet.tsx
 #: src/components/routes/system/cpu-sheet.tsx
 msgid "Per-core average utilization"
@@ -1086,6 +1174,14 @@ msgstr "Çekirdek başına ortalama kullanım"
 #: src/components/routes/system/cpu-sheet.tsx
 msgid "Percentage of time spent in each state"
 msgstr "Her durumda harcanan zamanın yüzdesi"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Permanent"
+msgstr "Kalıcı"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Persistence"
+msgstr "Kalıcılık"
 
 #: src/components/routes/settings/notifications.tsx
 msgid "Please <0>configure an SMTP server</0> to ensure alerts are delivered."
@@ -1122,7 +1218,7 @@ msgstr "Lütfen hesabınıza giriş yapın"
 
 #: src/components/add-system.tsx
 msgid "Port"
-msgstr ""
+msgstr "Port"
 
 #. Power On Time
 #: src/components/routes/system/smart-table.tsx
@@ -1243,6 +1339,10 @@ msgstr "Ayarları Kaydet"
 msgid "Save system"
 msgstr "Sistemi kaydet"
 
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Saved in the database and does not expire until you disable it."
+msgstr "Veritabanında kaydedilir ve siz devre dışı bırakana kadar süresi dolmaz."
+
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Schedule"
 msgstr "Zamanla"
@@ -1263,6 +1363,10 @@ msgstr "Ara"
 msgid "Search for systems or settings..."
 msgstr "Sistemler veya ayarlar için ara..."
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Seconds between pings (default: 60)"
+msgstr "Pingler arasındaki saniye (varsayılan: 60)"
+
 #: src/components/alerts/alerts-sheet.tsx
 msgid "See <0>notification settings</0> to configure how you receive alerts."
 msgstr "Uyarıları nasıl alacağınızı yapılandırmak için <0>bildirim ayarlarını</0> inceleyin."
@@ -1270,6 +1374,18 @@ msgstr "Uyarıları nasıl alacağınızı yapılandırmak için <0>bildirim aya
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Select {foo}"
 msgstr "Seç {foo}"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Send a single heartbeat ping to verify your endpoint is working."
+msgstr "Uç noktanızın çalıştığını doğrulamak için tek bir heartbeat ping'i gönderin."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Send periodic outbound pings to an external monitoring service so you can monitor Beszel without exposing it to the internet."
+msgstr "Beszel'i internete maruz bırakmadan izleyebilmeniz için harici bir izleme servisine periyodik giden pingler gönderin."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Send test heartbeat"
+msgstr "Test heartbeat gönder"
 
 #: src/components/routes/system.tsx
 msgid "Sent"
@@ -1291,8 +1407,13 @@ msgstr "Hizmetler"
 msgid "Set percentage thresholds for meter colors."
 msgstr "Sayaç renkleri için yüzde eşiklerini ayarlayın."
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Set the following environment variables on your Beszel hub to enable heartbeat monitoring:"
+msgstr "Heartbeat izlemeyi etkinleştirmek için Beszel hub'ınızda aşağıdaki ortam değişkenlerini ayarlayın:"
+
 #: src/components/command-palette.tsx
 #: src/components/command-palette.tsx
+#: src/components/navbar.tsx
 #: src/components/routes/settings/layout.tsx
 #: src/components/routes/settings/layout.tsx
 msgid "Settings"
@@ -1407,9 +1528,17 @@ msgstr "Sistem sensörlerinin sıcaklıkları"
 msgid "Test <0>URL</0>"
 msgstr "<0>URL</0>'yi Test Et"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Test heartbeat"
+msgstr "Test heartbeat"
+
 #: src/components/routes/settings/notifications.tsx
 msgid "Test notification sent"
 msgstr "Test bildirimi gönderildi"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "The overall status is <0>ok</0> when all systems are up, <1>warn</1> when alerts are triggered, and <2>error</2> when any system is down."
+msgstr "Tüm sistemler çalışırken genel durum <0>ok</0>, uyarılar tetiklendiğinde <1>uyarı</1> ve herhangi bir sistem çöktüğünde <2>hata</2> şeklindedir."
 
 #: src/components/login/forgot-pass-form.tsx
 msgid "Then log into the backend and reset your user account password in the users table."
@@ -1439,11 +1568,12 @@ msgstr "Zaman formatı"
 msgid "To email(s)"
 msgstr "E-posta(lar)a"
 
-#: src/components/routes/system.tsx
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
+#: src/components/routes/system/info-bar.tsx
 msgid "Toggle grid"
 msgstr "Izgarayı değiştir"
 
+#: src/components/mode-toggle.tsx
 #: src/components/mode-toggle.tsx
 msgid "Toggle theme"
 msgstr "Temayı değiştir"
@@ -1451,7 +1581,7 @@ msgstr "Temayı değiştir"
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Token"
-msgstr ""
+msgstr "Token"
 
 #: src/components/command-palette.tsx
 #: src/components/routes/settings/layout.tsx
@@ -1510,6 +1640,10 @@ msgid "Triggers when any sensor exceeds a threshold"
 msgstr "Herhangi bir sensör bir eşiği aştığında tetiklenir"
 
 #: src/lib/alerts.ts
+msgid "Triggers when battery charge drops below a threshold"
+msgstr "Pil şarjı bir eşiğin altına düştüğünde tetiklenir"
+
+#: src/lib/alerts.ts
 msgid "Triggers when combined up/down exceeds a threshold"
 msgstr "Birleştirilmiş yukarı/aşağı bir eşiği aştığında tetiklenir"
 
@@ -1564,7 +1698,7 @@ msgid "Unlimited"
 msgstr "Sınırsız"
 
 #. Context: System is up
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "Up"
 msgstr "Açık"
@@ -1591,9 +1725,10 @@ msgstr "Her 10 dakikada bir güncellenir."
 msgid "Upload"
 msgstr "Yükle"
 
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
+#: src/components/systems-table/systems-table-columns.tsx
 msgid "Uptime"
-msgstr "Çalışma Süresi"
+msgstr "Uptime"
 
 #: src/components/routes/system.tsx
 #: src/components/routes/system.tsx
@@ -1663,8 +1798,12 @@ msgid "Webhook / Push notifications"
 msgstr "Webhook / Anlık bildirimler"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
-msgid "When enabled, this token allows agents to self-register without prior system creation. Expires after one hour or on hub restart."
-msgstr "Etkinleştirildiğinde, bu token agentların önceden sistem oluşturmadan kendilerini kaydetmelerine izin verir. Bir saat sonra veya hub yeniden başlatıldığında sona erer."
+msgid "When enabled, this token allows agents to self-register without prior system creation."
+msgstr "Etkinleştirildiğinde, bu token aracıların önceden sistem oluşturmadan kendilerini kaydetmelerine izin verir."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "When using POST, each heartbeat includes a JSON payload with system status summary, list of down systems, and triggered alerts."
+msgstr "POST kullanırken, her heartbeat sistem durumu özeti, çöken sistemlerin listesi ve tetiklenen uyarıları içeren bir JSON yükü içerir."
 
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx

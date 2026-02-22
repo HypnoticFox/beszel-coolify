@@ -8,7 +8,7 @@ msgstr ""
 "Language: ko\n"
 "Project-Id-Version: beszel\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2025-11-14 22:51\n"
+"PO-Revision-Date: 2026-01-31 21:16\n"
 "Last-Translator: \n"
 "Language-Team: Korean\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
@@ -24,6 +24,10 @@ msgstr ""
 msgid "{0} of {1} row(s) selected."
 msgstr "{1}개의 행 중 {0}개가 선택되었습니다."
 
+#: src/components/routes/system/info-bar.tsx
+msgid "{cores, plural, one {# core} other {# cores}}"
+msgstr "{cores, plural, one {# 코어} other {# 코어}}"
+
 #: src/lib/utils.ts
 msgid "{count, plural, one {{countString} day} other {{countString} days}}"
 msgstr "{count, plural, one {{countString} 일} other {{countString} 일}}"
@@ -35,6 +39,10 @@ msgstr "{count, plural, one {{countString} 시간} other {{countString} 시간}}
 #: src/lib/utils.ts
 msgid "{count, plural, one {{countString} minute} few {{countString} minutes} many {{countString} minutes} other {{countString} minutes}}"
 msgstr "{count, plural, one {{countString} 분} few {{countString} 분} many {{countString} 분} other {{countString} 분}}"
+
+#: src/components/routes/system/info-bar.tsx
+msgid "{threads, plural, one {# thread} other {# threads}}"
+msgstr "{threads, plural, one {# 스레드} other {# 스레드}}"
 
 #: src/lib/utils.ts
 msgid "1 hour"
@@ -85,6 +93,7 @@ msgstr "작업"
 
 #: src/components/alerts-history-columns.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
+#: src/components/routes/settings/heartbeat.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Active"
 msgstr "활성"
@@ -132,6 +141,10 @@ msgstr "관리자"
 msgid "After"
 msgstr "이후"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "After setting the environment variables, restart your Beszel hub for changes to take effect."
+msgstr "환경 변수를 설정한 후, 변경 사항을 적용하려면 Beszel 허브를 재시작하세요."
+
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "Agent"
 msgstr "에이전트"
@@ -149,6 +162,7 @@ msgstr "알림"
 
 #: src/components/command-palette.tsx
 #: src/components/containers-table/containers-table.tsx
+#: src/components/navbar.tsx
 #: src/components/routes/containers.tsx
 msgid "All Containers"
 msgstr "모든 컨테이너"
@@ -184,6 +198,11 @@ msgstr "Docker 컨테이너의 평균 CPU 사용량"
 
 #. placeholder {0}: alertData.unit
 #: src/components/alerts/alerts-sheet.tsx
+msgid "Average drops below <0>{value}{0}</0>"
+msgstr "평균이 <0>{value}{0}</0> 아래로 떨어집니다"
+
+#. placeholder {0}: alertData.unit
+#: src/components/alerts/alerts-sheet.tsx
 msgid "Average exceeds <0>{value}{0}</0>"
 msgstr "평균이 <0>{value}{0}</0>을(를) 초과합니다"
 
@@ -214,7 +233,13 @@ msgstr "백업"
 msgid "Bandwidth"
 msgstr "대역폭"
 
+#. Battery label in systems table header
+#: src/components/systems-table/systems-table-columns.tsx
+msgid "Bat"
+msgstr "배터리"
+
 #: src/components/routes/system.tsx
+#: src/lib/alerts.ts
 msgid "Battery"
 msgstr "배터리"
 
@@ -229,6 +254,13 @@ msgstr "비활성화됨"
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Before"
 msgstr "이전"
+
+#. placeholder {0}: alert.value
+#. placeholder {1}: info.unit
+#. placeholder {2}: alert.min
+#: src/components/active-alerts.tsx
+msgid "Below {0}{1} in last {2, plural, one {# minute} other {# minutes}}"
+msgstr "마지막 {2, plural, one {# 분} other {# 분}} 동안 {0}{1} 미만"
 
 #: src/components/login/auth-form.tsx
 msgid "Beszel supports OpenID Connect and many OAuth2 authentication providers."
@@ -322,6 +354,10 @@ msgstr "{email}에서 재설정 링크를 확인하세요."
 #: src/components/routes/settings/layout.tsx
 msgid "Check logs for more details."
 msgstr "자세한 내용은 로그를 확인하세요."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Check your monitoring service"
+msgstr "모니터링 서비스 확인"
 
 #: src/components/routes/settings/notifications.tsx
 msgid "Check your notification service"
@@ -568,7 +604,7 @@ msgstr "문서"
 
 #. Context: System is down
 #: src/components/alerts-history-columns.tsx
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table-columns.tsx
 #: src/lib/alerts.ts
 msgid "Down"
@@ -616,6 +652,14 @@ msgstr "빔"
 msgid "End Time"
 msgstr "종료 시간"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Endpoint URL"
+msgstr "엔드포인트 URL"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Endpoint URL to ping (required)"
+msgstr "핑을 보낼 엔드포인트 URL (필수)"
+
 #: src/components/login/login.tsx
 msgid "Enter email address to reset password"
 msgstr "비밀번호를 재설정하려면 이메일 주소를 입력하세요"
@@ -628,9 +672,16 @@ msgstr "이메일 주소 입력..."
 msgid "Enter your one-time password."
 msgstr "OTP를 입력하세요."
 
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Ephemeral"
+msgstr "일시적"
+
 #: src/components/login/auth-form.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/config-yaml.tsx
+#: src/components/routes/settings/heartbeat.tsx
+#: src/components/routes/settings/heartbeat.tsx
+#: src/components/routes/settings/heartbeat.tsx
 #: src/components/routes/settings/notifications.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/settings/quiet-hours.tsx
@@ -638,6 +689,10 @@ msgstr "OTP를 입력하세요."
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Error"
 msgstr "오류"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Example:"
+msgstr "예시:"
 
 #. placeholder {0}: alert.value
 #. placeholder {1}: info.unit
@@ -648,7 +703,7 @@ msgstr "마지막 {2, plural, one {# 분} other {# 분}} 동안 {0}{1} 초과"
 
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Exec main PID"
-msgstr ""
+msgstr "실행 메인 PID"
 
 #: src/components/routes/settings/config-yaml.tsx
 msgid "Existing systems not defined in <0>config.yml</0> will be deleted. Please make regular backups."
@@ -657,6 +712,10 @@ msgstr "<0>config.yml</0>에 정의되지 않은 기존 시스템은 삭제됩�
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Exited active"
 msgstr "활성 종료됨"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Expires after one hour or on hub restart."
+msgstr "한 시간 후 또는 허브 재시작 시 만료됩니다."
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -691,6 +750,10 @@ msgstr "인증 실패"
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Failed to save settings"
 msgstr "설정 저장 실패"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Failed to send heartbeat"
+msgstr "하트비트 전송 실패"
 
 #: src/components/routes/settings/notifications.tsx
 msgid "Failed to send test notification"
@@ -771,6 +834,18 @@ msgstr "그리드"
 msgid "Health"
 msgstr "상태"
 
+#: src/components/routes/settings/layout.tsx
+msgid "Heartbeat"
+msgstr "하트비트"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Heartbeat Monitoring"
+msgstr "하트비트 모니터링"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Heartbeat sent successfully"
+msgstr "하트비트 전송 성공"
+
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy install command"
@@ -780,6 +855,14 @@ msgstr "Homebrew 명령어"
 #: src/components/add-system.tsx
 msgid "Host / IP"
 msgstr "호스트 / IP"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "HTTP Method"
+msgstr "HTTP 메서드"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "HTTP method: POST, GET, or HEAD (default: POST)"
+msgstr "HTTP 메서드: POST, GET 또는 HEAD (기본값: POST)"
 
 #. Context: Battery state
 #: src/lib/i18n.ts
@@ -799,15 +882,15 @@ msgstr "이미지"
 msgid "Inactive"
 msgstr "비활성"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Interval"
+msgstr "간격"
+
 #: src/components/login/auth-form.tsx
 msgid "Invalid email address."
 msgstr "잘못된 이메일 주소입니다."
 
-#. Linux kernel
-#: src/components/routes/system.tsx
-msgid "Kernel"
-msgstr "커널"
-
+#: src/components/lang-toggle.tsx
 #: src/components/routes/settings/general.tsx
 msgid "Language"
 msgstr "언어"
@@ -827,7 +910,7 @@ msgstr "생명주기"
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systemd-table/systemd-table.tsx
 msgid "limit"
-msgstr ""
+msgstr "제한"
 
 #: src/components/routes/system.tsx
 msgid "Load Average"
@@ -883,7 +966,7 @@ msgstr "알림을 생성하려 하시나요? 시스템 테이블의 종 <0/> 아
 
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Main PID"
-msgstr ""
+msgstr "메인 PID"
 
 #: src/components/routes/settings/layout.tsx
 msgid "Manage display and notification preferences."
@@ -900,6 +983,7 @@ msgid "Max 1 min"
 msgstr "1분간 최댓값"
 
 #: src/components/containers-table/containers-table-columns.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systemd-table/systemd-table-columns.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systems-table/systems-table-columns.tsx
@@ -1078,6 +1162,10 @@ msgstr "일시 정지됨"
 msgid "Paused ({pausedSystemsLength})"
 msgstr "일시 정지됨 ({pausedSystemsLength})"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Payload format"
+msgstr "페이로드 형식"
+
 #: src/components/routes/system/cpu-sheet.tsx
 #: src/components/routes/system/cpu-sheet.tsx
 msgid "Per-core average utilization"
@@ -1086,6 +1174,14 @@ msgstr "코어별 평균 사용률"
 #: src/components/routes/system/cpu-sheet.tsx
 msgid "Percentage of time spent in each state"
 msgstr "각 상태에서 보낸 시간의 백분율"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Permanent"
+msgstr "영구적"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Persistence"
+msgstr "지속성"
 
 #: src/components/routes/settings/notifications.tsx
 msgid "Please <0>configure an SMTP server</0> to ensure alerts are delivered."
@@ -1208,7 +1304,7 @@ msgstr "재개"
 #: src/components/systems-table/systems-table-columns.tsx
 msgctxt "Root disk label"
 msgid "Root"
-msgstr ""
+msgstr "루트"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgid "Rotate token"
@@ -1243,6 +1339,10 @@ msgstr "설정 저장"
 msgid "Save system"
 msgstr "시스템 저장"
 
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Saved in the database and does not expire until you disable it."
+msgstr "데이터베이스에 저장되며 비활성화할 때까지 만료되지 않습니다."
+
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Schedule"
 msgstr "일정"
@@ -1263,6 +1363,10 @@ msgstr "검색"
 msgid "Search for systems or settings..."
 msgstr "시스템 또는 설정 검색..."
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Seconds between pings (default: 60)"
+msgstr "핑 사이 시간(초) (기본값: 60)"
+
 #: src/components/alerts/alerts-sheet.tsx
 msgid "See <0>notification settings</0> to configure how you receive alerts."
 msgstr "알림을 받는 방법을 구성하려면 <0>알림 설정</0>을 참조하세요."
@@ -1270,6 +1374,18 @@ msgstr "알림을 받는 방법을 구성하려면 <0>알림 설정</0>을 참�
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Select {foo}"
 msgstr "{foo} 선택"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Send a single heartbeat ping to verify your endpoint is working."
+msgstr "엔드포인트가 작동하는지 확인하기 위해 단일 하트비트 핑을 보냅니다."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Send periodic outbound pings to an external monitoring service so you can monitor Beszel without exposing it to the internet."
+msgstr "외부 모니터링 서비스에 주기적으로 아웃바운드 핑을 보내 인터넷에 노출하지 않고도 Beszel을 모니터링할 수 있습니다."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Send test heartbeat"
+msgstr "테스트 하트비트 전송"
 
 #: src/components/routes/system.tsx
 msgid "Sent"
@@ -1291,8 +1407,13 @@ msgstr "서비스"
 msgid "Set percentage thresholds for meter colors."
 msgstr "그래프 미터 색상의 백분율 임계값을 설정합니다."
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Set the following environment variables on your Beszel hub to enable heartbeat monitoring:"
+msgstr "하트비트 모니터링을 활성화하려면 Beszel 허브에 다음 환경 변수를 설정하세요:"
+
 #: src/components/command-palette.tsx
 #: src/components/command-palette.tsx
+#: src/components/navbar.tsx
 #: src/components/routes/settings/layout.tsx
 #: src/components/routes/settings/layout.tsx
 msgid "Settings"
@@ -1407,9 +1528,17 @@ msgstr "시스템 센서의 온도"
 msgid "Test <0>URL</0>"
 msgstr "테스트 <0>URL</0>"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Test heartbeat"
+msgstr "테스트 하트비트"
+
 #: src/components/routes/settings/notifications.tsx
 msgid "Test notification sent"
 msgstr "테스트 알림이 전송되었습니다."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "The overall status is <0>ok</0> when all systems are up, <1>warn</1> when alerts are triggered, and <2>error</2> when any system is down."
+msgstr "모든 시스템이 정상이면 <0>ok</0>, 알림이 트리거되면 <1>경고</1>, 시스템이 다운되면 <2>오류</2> 상태가 됩니다."
 
 #: src/components/login/forgot-pass-form.tsx
 msgid "Then log into the backend and reset your user account password in the users table."
@@ -1439,11 +1568,12 @@ msgstr "시간 형식"
 msgid "To email(s)"
 msgstr "받는사람(들)"
 
-#: src/components/routes/system.tsx
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
+#: src/components/routes/system/info-bar.tsx
 msgid "Toggle grid"
 msgstr "그리드 전환"
 
+#: src/components/mode-toggle.tsx
 #: src/components/mode-toggle.tsx
 msgid "Toggle theme"
 msgstr "테마 전환"
@@ -1510,6 +1640,10 @@ msgid "Triggers when any sensor exceeds a threshold"
 msgstr "센서가 임계값을 초과할 때 트리거됩니다."
 
 #: src/lib/alerts.ts
+msgid "Triggers when battery charge drops below a threshold"
+msgstr "배터리 충전량이 임계값 아래로 떨어질 때 트리거됩니다."
+
+#: src/lib/alerts.ts
 msgid "Triggers when combined up/down exceeds a threshold"
 msgstr "업로드와 다운로드 대역폭의 합이 임계값을 초과할 때 트리거됩니다."
 
@@ -1541,7 +1675,7 @@ msgstr "유형"
 
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Unit file"
-msgstr ""
+msgstr "유닛 파일"
 
 #. Temperature / network units
 #: src/components/routes/settings/general.tsx
@@ -1564,7 +1698,7 @@ msgid "Unlimited"
 msgstr "무제한"
 
 #. Context: System is up
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "Up"
 msgstr "온라인"
@@ -1591,9 +1725,10 @@ msgstr "10분마다 업데이트됩니다."
 msgid "Upload"
 msgstr "업로드"
 
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
+#: src/components/systems-table/systems-table-columns.tsx
 msgid "Uptime"
-msgstr "가동 시간"
+msgstr "가동시간"
 
 #: src/components/routes/system.tsx
 #: src/components/routes/system.tsx
@@ -1663,8 +1798,12 @@ msgid "Webhook / Push notifications"
 msgstr "Webhook / 푸시 알림"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
-msgid "When enabled, this token allows agents to self-register without prior system creation. Expires after one hour or on hub restart."
-msgstr "활성화하면 이 토큰을 통해 에이전트가 사전 시스템 생성 없이 자체 등록할 수 있습니다. 1시간 후 또는 허브 재시작 시 만료됩니다."
+msgid "When enabled, this token allows agents to self-register without prior system creation."
+msgstr "활성화되면 이 토큰은 사전 시스템 생성 없이 에이전트가 자체 등록할 수 있도록 합니다."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "When using POST, each heartbeat includes a JSON payload with system status summary, list of down systems, and triggered alerts."
+msgstr "POST를 사용할 때 각 하트비트에는 시스템 상태 요약, 다운된 시스템 목록 및 트리거된 알림이 포함된 JSON 페이로드가 포함됩니다."
 
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx

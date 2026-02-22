@@ -1,11 +1,17 @@
 //go:build testing
-// +build testing
 
 package agent
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -18,6 +24,37 @@ import (
 )
 
 var defaultCacheTimeMs = uint16(60_000)
+
+type recordingRoundTripper struct {
+	statusCode  int
+	body        string
+	contentType string
+	called      bool
+	lastPath    string
+	lastQuery   map[string]string
+}
+
+func (rt *recordingRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	rt.called = true
+	rt.lastPath = req.URL.EscapedPath()
+	rt.lastQuery = map[string]string{}
+	for key, values := range req.URL.Query() {
+		if len(values) > 0 {
+			rt.lastQuery[key] = values[0]
+		}
+	}
+	resp := &http.Response{
+		StatusCode: rt.statusCode,
+		Status:     "200 OK",
+		Header:     make(http.Header),
+		Body:       io.NopCloser(strings.NewReader(rt.body)),
+		Request:    req,
+	}
+	if rt.contentType != "" {
+		resp.Header.Set("Content-Type", rt.contentType)
+	}
+	return resp, nil
+}
 
 // cycleCpuDeltas cycles the CPU tracking data for a specific cache time interval
 func (dm *dockerManager) cycleCpuDeltas(cacheTimeMs uint16) {
@@ -110,6 +147,72 @@ func TestCalculateMemoryUsage(t *testing.T) {
 	}
 }
 
+func TestBuildDockerContainerEndpoint(t *testing.T) {
+	t.Run("valid container ID builds escaped endpoint", func(t *testing.T) {
+		endpoint, err := buildDockerContainerEndpoint("0123456789ab", "json", nil)
+		require.NoError(t, err)
+		assert.Equal(t, "http://localhost/containers/0123456789ab/json", endpoint)
+	})
+
+	t.Run("invalid container ID is rejected", func(t *testing.T) {
+		_, err := buildDockerContainerEndpoint("../../version", "json", nil)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid container id")
+	})
+}
+
+func TestContainerDetailsRequestsValidateContainerID(t *testing.T) {
+	rt := &recordingRoundTripper{
+		statusCode: 200,
+		body:       `{"Config":{"Env":["SECRET=1"]}}`,
+	}
+	dm := &dockerManager{
+		client: &http.Client{Transport: rt},
+	}
+
+	_, err := dm.getContainerInfo(context.Background(), "../version")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid container id")
+	assert.False(t, rt.called, "request should be rejected before dispatching to Docker API")
+}
+
+func TestContainerDetailsRequestsUseExpectedDockerPaths(t *testing.T) {
+	t.Run("container info uses container json endpoint", func(t *testing.T) {
+		rt := &recordingRoundTripper{
+			statusCode: 200,
+			body:       `{"Config":{"Env":["SECRET=1"]},"Name":"demo"}`,
+		}
+		dm := &dockerManager{
+			client: &http.Client{Transport: rt},
+		}
+
+		body, err := dm.getContainerInfo(context.Background(), "0123456789ab")
+		require.NoError(t, err)
+		assert.True(t, rt.called)
+		assert.Equal(t, "/containers/0123456789ab/json", rt.lastPath)
+		assert.NotContains(t, string(body), "SECRET=1", "sensitive env vars should be removed")
+	})
+
+	t.Run("container logs uses expected endpoint and query params", func(t *testing.T) {
+		rt := &recordingRoundTripper{
+			statusCode: 200,
+			body:       "line1\nline2\n",
+		}
+		dm := &dockerManager{
+			client: &http.Client{Transport: rt},
+		}
+
+		logs, err := dm.getLogs(context.Background(), "abcdef123456")
+		require.NoError(t, err)
+		assert.True(t, rt.called)
+		assert.Equal(t, "/containers/abcdef123456/logs", rt.lastPath)
+		assert.Equal(t, "1", rt.lastQuery["stdout"])
+		assert.Equal(t, "1", rt.lastQuery["stderr"])
+		assert.Equal(t, "200", rt.lastQuery["tail"])
+		assert.Equal(t, "line1\nline2\n", logs)
+	})
+}
+
 func TestValidateCpuPercentage(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -184,11 +287,12 @@ func TestUpdateContainerStatsValues(t *testing.T) {
 	// Check memory (should be converted to MB: 1048576 bytes = 1 MB)
 	assert.Equal(t, 1.0, stats.Mem)
 
-	// Check network sent (should be converted to MB: 524288 bytes = 0.5 MB)
-	assert.Equal(t, 0.5, stats.NetworkSent)
+	// Check bandwidth (raw bytes)
+	assert.Equal(t, [2]uint64{524288, 262144}, stats.Bandwidth)
 
-	// Check network recv (should be converted to MB: 262144 bytes = 0.25 MB)
-	assert.Equal(t, 0.25, stats.NetworkRecv)
+	// Deprecated fields still populated for backward compatibility with older hubs
+	assert.Equal(t, 0.5, stats.NetworkSent)  // 524288 bytes = 0.5 MB
+	assert.Equal(t, 0.25, stats.NetworkRecv) // 262144 bytes = 0.25 MB
 
 	// Check read time
 	assert.Equal(t, testTime, stats.PrevReadTime)
@@ -378,6 +482,117 @@ func TestDockerManagerCreation(t *testing.T) {
 	assert.NotNil(t, dm.networkRecvTrackers)
 }
 
+func TestCheckDockerVersion(t *testing.T) {
+	tests := []struct {
+		name      string
+		responses []struct {
+			statusCode int
+			body       string
+		}
+		expectedGood     bool
+		expectedRequests int
+	}{
+		{
+			name: "200 with good version on first try",
+			responses: []struct {
+				statusCode int
+				body       string
+			}{
+				{http.StatusOK, `{"Version":"25.0.1"}`},
+			},
+			expectedGood:     true,
+			expectedRequests: 1,
+		},
+		{
+			name: "200 with old version on first try",
+			responses: []struct {
+				statusCode int
+				body       string
+			}{
+				{http.StatusOK, `{"Version":"24.0.7"}`},
+			},
+			expectedGood:     false,
+			expectedRequests: 1,
+		},
+		{
+			name: "non-200 then 200 with good version",
+			responses: []struct {
+				statusCode int
+				body       string
+			}{
+				{http.StatusServiceUnavailable, `"not ready"`},
+				{http.StatusOK, `{"Version":"25.1.0"}`},
+			},
+			expectedGood:     true,
+			expectedRequests: 2,
+		},
+		{
+			name: "non-200 on all retries",
+			responses: []struct {
+				statusCode int
+				body       string
+			}{
+				{http.StatusInternalServerError, `"error"`},
+				{http.StatusUnauthorized, `"error"`},
+			},
+			expectedGood:     false,
+			expectedRequests: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			requestCount := 0
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				idx := requestCount
+				requestCount++
+				if idx >= len(tt.responses) {
+					idx = len(tt.responses) - 1
+				}
+				w.WriteHeader(tt.responses[idx].statusCode)
+				fmt.Fprint(w, tt.responses[idx].body)
+			}))
+			defer server.Close()
+
+			dm := &dockerManager{
+				client: &http.Client{
+					Transport: &http.Transport{
+						DialContext: func(_ context.Context, network, _ string) (net.Conn, error) {
+							return net.Dial(network, server.Listener.Addr().String())
+						},
+					},
+				},
+				retrySleep: func(time.Duration) {},
+			}
+
+			dm.checkDockerVersion()
+
+			assert.Equal(t, tt.expectedGood, dm.goodDockerVersion)
+			assert.Equal(t, tt.expectedRequests, requestCount)
+		})
+	}
+
+	t.Run("request error on all retries", func(t *testing.T) {
+		requestCount := 0
+		dm := &dockerManager{
+			client: &http.Client{
+				Transport: &http.Transport{
+					DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+						requestCount++
+						return nil, errors.New("connection refused")
+					},
+				},
+			},
+			retrySleep: func(time.Duration) {},
+		}
+
+		dm.checkDockerVersion()
+
+		assert.False(t, dm.goodDockerVersion)
+		assert.Equal(t, 2, requestCount)
+	})
+}
+
 func TestCycleCpuDeltas(t *testing.T) {
 	dm := &dockerManager{
 		lastCpuContainer: map[uint16]map[string]uint64{
@@ -527,8 +742,10 @@ func TestContainerStatsInitialization(t *testing.T) {
 
 	assert.Equal(t, 45.67, stats.Cpu)
 	assert.Equal(t, 2.0, stats.Mem)
-	assert.Equal(t, 1.0, stats.NetworkSent)
-	assert.Equal(t, 0.5, stats.NetworkRecv)
+	assert.Equal(t, [2]uint64{1048576, 524288}, stats.Bandwidth)
+	// Deprecated fields still populated for backward compatibility with older hubs
+	assert.Equal(t, 1.0, stats.NetworkSent) // 1048576 bytes = 1 MB
+	assert.Equal(t, 0.5, stats.NetworkRecv) // 524288 bytes = 0.5 MB
 	assert.Equal(t, testTime, stats.PrevReadTime)
 }
 
@@ -689,9 +906,47 @@ func TestContainerStatsEndToEndWithRealData(t *testing.T) {
 
 	assert.Equal(t, cpuPct, testStats.Cpu)
 	assert.Equal(t, bytesToMegabytes(float64(usedMemory)), testStats.Mem)
+	assert.Equal(t, [2]uint64{1000000, 500000}, testStats.Bandwidth)
+	// Deprecated fields still populated for backward compatibility with older hubs
 	assert.Equal(t, bytesToMegabytes(1000000), testStats.NetworkSent)
 	assert.Equal(t, bytesToMegabytes(500000), testStats.NetworkRecv)
 	assert.Equal(t, testTime, testStats.PrevReadTime)
+}
+
+func TestGetLogsDetectsMultiplexedWithoutContentType(t *testing.T) {
+	// Docker multiplexed frame: [stream][0,0,0][len(4 bytes BE)][payload]
+	frame := []byte{
+		0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x05,
+		'H', 'e', 'l', 'l', 'o',
+	}
+	rt := &recordingRoundTripper{
+		statusCode: 200,
+		body:       string(frame),
+		// Intentionally omit content type to simulate Podman behavior.
+	}
+	dm := &dockerManager{
+		client: &http.Client{Transport: rt},
+	}
+
+	logs, err := dm.getLogs(context.Background(), "abcdef123456")
+	require.NoError(t, err)
+	assert.Equal(t, "Hello", logs)
+}
+
+func TestGetLogsDoesNotMisclassifyRawStreamAsMultiplexed(t *testing.T) {
+	// Starts with 0x01, but doesn't match Docker frame signature (reserved bytes aren't all zero).
+	raw := []byte{0x01, 0x02, 0x03, 0x04, 'r', 'a', 'w'}
+	rt := &recordingRoundTripper{
+		statusCode: 200,
+		body:       string(raw),
+	}
+	dm := &dockerManager{
+		client: &http.Client{Transport: rt},
+	}
+
+	logs, err := dm.getLogs(context.Background(), "abcdef123456")
+	require.NoError(t, err)
+	assert.Equal(t, raw, []byte(logs))
 }
 
 func TestEdgeCasesWithRealData(t *testing.T) {
@@ -800,6 +1055,24 @@ func TestNetworkRateCalculationFormula(t *testing.T) {
 				tc.deltaBytes, tc.elapsedMs, tc.expectedRate)
 		})
 	}
+}
+
+func TestGetHostInfo(t *testing.T) {
+	data, err := os.ReadFile("test-data/system_info.json")
+	require.NoError(t, err)
+
+	var info container.HostInfo
+	err = json.Unmarshal(data, &info)
+	require.NoError(t, err)
+
+	assert.Equal(t, "6.8.0-31-generic", info.KernelVersion)
+	assert.Equal(t, "Ubuntu 24.04 LTS", info.OperatingSystem)
+	// assert.Equal(t, "24.04", info.OSVersion)
+	// assert.Equal(t, "linux", info.OSType)
+	// assert.Equal(t, "x86_64", info.Architecture)
+	assert.EqualValues(t, 4, info.NCPU)
+	assert.EqualValues(t, 2095882240, info.MemTotal)
+	// assert.Equal(t, "27.0.1", info.ServerVersion)
 }
 
 func TestDeltaTrackerCacheTimeIsolation(t *testing.T) {
@@ -932,6 +1205,7 @@ func TestDecodeDockerLogStream(t *testing.T) {
 		input       []byte
 		expected    string
 		expectError bool
+		multiplexed bool
 	}{
 		{
 			name: "simple log entry",
@@ -942,6 +1216,7 @@ func TestDecodeDockerLogStream(t *testing.T) {
 			},
 			expected:    "Hello World",
 			expectError: false,
+			multiplexed: true,
 		},
 		{
 			name: "multiple frames",
@@ -955,6 +1230,7 @@ func TestDecodeDockerLogStream(t *testing.T) {
 			},
 			expected:    "HelloWorld",
 			expectError: false,
+			multiplexed: true,
 		},
 		{
 			name: "zero length frame",
@@ -967,12 +1243,20 @@ func TestDecodeDockerLogStream(t *testing.T) {
 			},
 			expected:    "Hello",
 			expectError: false,
+			multiplexed: true,
 		},
 		{
 			name:        "empty input",
 			input:       []byte{},
 			expected:    "",
 			expectError: false,
+			multiplexed: true,
+		},
+		{
+			name:        "raw stream (not multiplexed)",
+			input:       []byte("raw log content"),
+			expected:    "raw log content",
+			multiplexed: false,
 		},
 	}
 
@@ -980,7 +1264,7 @@ func TestDecodeDockerLogStream(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			reader := bytes.NewReader(tt.input)
 			var builder strings.Builder
-			err := decodeDockerLogStream(reader, &builder)
+			err := decodeDockerLogStream(reader, &builder, tt.multiplexed)
 
 			if tt.expectError {
 				assert.Error(t, err)
@@ -1004,7 +1288,7 @@ func TestDecodeDockerLogStreamMemoryProtection(t *testing.T) {
 
 		reader := bytes.NewReader(input)
 		var builder strings.Builder
-		err := decodeDockerLogStream(reader, &builder)
+		err := decodeDockerLogStream(reader, &builder, true)
 
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "log frame size")
@@ -1038,7 +1322,7 @@ func TestDecodeDockerLogStreamMemoryProtection(t *testing.T) {
 
 		reader := bytes.NewReader(input)
 		var builder strings.Builder
-		err := decodeDockerLogStream(reader, &builder)
+		err := decodeDockerLogStream(reader, &builder, true)
 
 		// Should complete without error (graceful truncation)
 		assert.NoError(t, err)

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"maps"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -28,11 +29,36 @@ type systemdManager struct {
 	patterns        []string
 }
 
+// isSystemdAvailable checks if systemd is used on the system to avoid unnecessary connection attempts (#1548)
+func isSystemdAvailable() bool {
+	paths := []string{
+		"/run/systemd/system",
+		"/run/dbus/system_bus_socket",
+		"/var/run/dbus/system_bus_socket",
+	}
+	for _, path := range paths {
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+	}
+	if data, err := os.ReadFile("/proc/1/comm"); err == nil {
+		return strings.TrimSpace(string(data)) == "systemd"
+	}
+	return false
+}
+
 // newSystemdManager creates a new systemdManager.
 func newSystemdManager() (*systemdManager, error) {
 	if skipSystemd, _ := GetEnv("SKIP_SYSTEMD"); skipSystemd == "true" {
 		return nil, nil
 	}
+
+	// Check if systemd is available on the system before attempting connection
+	if !isSystemdAvailable() {
+		slog.Debug("Systemd not available")
+		return nil, nil
+	}
+
 	conn, err := dbus.NewSystemConnectionContext(context.Background())
 	if err != nil {
 		slog.Debug("Error connecting to systemd", "err", err, "ref", "https://beszel.dev/guide/systemd")
@@ -118,13 +144,27 @@ func (sm *systemdManager) getServiceStats(conn *dbus.Conn, refresh bool) []*syst
 		return nil
 	}
 
+	// Track which units are currently present to remove stale entries
+	currentUnits := make(map[string]struct{}, len(units))
+
 	for _, unit := range units {
+		currentUnits[unit.Name] = struct{}{}
 		service, err := sm.updateServiceStats(conn, unit)
 		if err != nil {
 			continue
 		}
 		services = append(services, service)
 	}
+
+	// Remove services that no longer exist in systemd
+	sm.Lock()
+	for unitName := range sm.serviceStatsMap {
+		if _, exists := currentUnits[unitName]; !exists {
+			delete(sm.serviceStatsMap, unitName)
+		}
+	}
+	sm.Unlock()
+
 	sm.hasFreshStats = true
 	return services
 }

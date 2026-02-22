@@ -1,5 +1,4 @@
 //go:build testing
-// +build testing
 
 package hub
 
@@ -10,6 +9,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -33,6 +33,26 @@ func createTestHub(t testing.TB) (*Hub, *pbtests.TestApp, error) {
 		return nil, nil, err
 	}
 	return NewHub(testApp), testApp, nil
+}
+
+// cleanupTestHub stops background system goroutines before tearing down the app.
+func cleanupTestHub(hub *Hub, testApp *pbtests.TestApp) {
+	if hub != nil {
+		sm := hub.GetSystemManager()
+		sm.RemoveAllSystems()
+		// Give updater goroutines a brief window to observe cancellation before DB teardown.
+		for range 20 {
+			if sm.GetSystemCount() == 0 {
+				break
+			}
+			runtime.Gosched()
+			time.Sleep(5 * time.Millisecond)
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if testApp != nil {
+		testApp.Cleanup()
+	}
 }
 
 // Helper function to create a test record
@@ -64,7 +84,7 @@ func TestValidateAgentHeaders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testApp.Cleanup()
+	defer cleanupTestHub(hub, testApp)
 
 	testCases := []struct {
 		name          string
@@ -145,7 +165,7 @@ func TestGetAllFingerprintRecordsByToken(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testApp.Cleanup()
+	defer cleanupTestHub(hub, testApp)
 
 	// create test user
 	userRecord, err := createTestUser(testApp)
@@ -235,7 +255,7 @@ func TestSetFingerprint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testApp.Cleanup()
+	defer cleanupTestHub(hub, testApp)
 
 	// Create test user
 	userRecord, err := createTestUser(testApp)
@@ -315,7 +335,7 @@ func TestCreateSystemFromAgentData(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testApp.Cleanup()
+	defer cleanupTestHub(hub, testApp)
 
 	// Create test user
 	userRecord, err := createTestUser(testApp)
@@ -425,7 +445,7 @@ func TestUniversalTokenFlow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testApp.Cleanup()
+	defer cleanupTestHub(nil, testApp)
 
 	// Create test user
 	userRecord, err := createTestUser(testApp)
@@ -493,7 +513,7 @@ func TestAgentConnect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testApp.Cleanup()
+	defer cleanupTestHub(hub, testApp)
 
 	// Create test user
 	userRecord, err := createTestUser(testApp)
@@ -652,7 +672,7 @@ func TestHandleAgentConnect(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer testApp.Cleanup()
+	defer cleanupTestHub(hub, testApp)
 
 	// Create test user
 	userRecord, err := createTestUser(testApp)
@@ -737,7 +757,7 @@ func TestAgentWebSocketIntegration(t *testing.T) {
 	// Create hub and test app
 	hub, testApp, err := createTestHub(t)
 	require.NoError(t, err)
-	defer testApp.Cleanup()
+	defer cleanupTestHub(hub, testApp)
 
 	// Get the hub's SSH key
 	hubSigner, err := hub.GetSSHKey("")
@@ -942,6 +962,8 @@ func TestAgentWebSocketIntegration(t *testing.T) {
 				}
 			}
 
+			time.Sleep(20 * time.Millisecond)
+
 			// Verify fingerprint state by re-reading the specific record
 			updatedFingerprintRecord, err := testApp.FindRecordById("fingerprints", fingerprintRecord.Id)
 			require.NoError(t, err)
@@ -976,7 +998,7 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 	// Create hub and test app
 	hub, testApp, err := createTestHub(t)
 	require.NoError(t, err)
-	defer testApp.Cleanup()
+	defer cleanupTestHub(hub, testApp)
 
 	// Get the hub's SSH key
 	hubSigner, err := hub.GetSSHKey("")
@@ -1144,6 +1166,8 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 					assert.Equal(t, systemCount, systemsAfterCount, "Total system count should remain the same")
 				}
 
+				time.Sleep(20 * time.Millisecond)
+
 				// Verify that a fingerprint record exists for this fingerprint
 				fingerprints, err := testApp.FindRecordsByFilter("fingerprints", "token = {:token} && fingerprint = {:fingerprint}", "", -1, 0, map[string]any{
 					"token":       universalToken,
@@ -1169,11 +1193,111 @@ func TestMultipleSystemsWithSameUniversalToken(t *testing.T) {
 	}
 }
 
+// TestPermanentUniversalTokenFromDB verifies that a universal token persisted in the DB
+// (universal_tokens collection) is accepted for agent self-registration even if it is not
+// present in the in-memory universalTokenMap.
+func TestPermanentUniversalTokenFromDB(t *testing.T) {
+	// Create hub and test app
+	hub, testApp, err := createTestHub(t)
+	require.NoError(t, err)
+	defer cleanupTestHub(hub, testApp)
+
+	// Get the hub's SSH key
+	hubSigner, err := hub.GetSSHKey("")
+	require.NoError(t, err)
+	goodPubKey := hubSigner.PublicKey()
+
+	// Create test user
+	userRecord, err := createTestUser(testApp)
+	require.NoError(t, err)
+
+	// Create a permanent universal token record in the DB (do NOT add it to universalTokenMap)
+	universalToken := "db-universal-token-123"
+	_, err = createTestRecord(testApp, "universal_tokens", map[string]any{
+		"user":  userRecord.Id,
+		"token": universalToken,
+	})
+	require.NoError(t, err)
+
+	// Create HTTP server with the actual API route
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/beszel/agent-connect" {
+			acr := &agentConnectRequest{
+				hub: hub,
+				req: r,
+				res: w,
+			}
+			acr.agentConnect()
+		} else {
+			http.NotFound(w, r)
+		}
+	}))
+	defer ts.Close()
+
+	// Create and configure agent
+	agentDataDir := t.TempDir()
+	err = os.WriteFile(filepath.Join(agentDataDir, "fingerprint"), []byte("db-token-system-fingerprint"), 0644)
+	require.NoError(t, err)
+
+	testAgent, err := agent.NewAgent(agentDataDir)
+	require.NoError(t, err)
+
+	// Set up environment variables for the agent
+	os.Setenv("BESZEL_AGENT_HUB_URL", ts.URL)
+	os.Setenv("BESZEL_AGENT_TOKEN", universalToken)
+	defer func() {
+		os.Unsetenv("BESZEL_AGENT_HUB_URL")
+		os.Unsetenv("BESZEL_AGENT_TOKEN")
+	}()
+
+	// Start agent in background
+	done := make(chan error, 1)
+	go func() {
+		serverOptions := agent.ServerOptions{
+			Network: "tcp",
+			Addr:    "127.0.0.1:46050",
+			Keys:    []ssh.PublicKey{goodPubKey},
+		}
+		done <- testAgent.Start(serverOptions)
+	}()
+
+	// Wait for connection result
+	maxWait := 2 * time.Second
+	time.Sleep(20 * time.Millisecond)
+	checkInterval := 20 * time.Millisecond
+	timeout := time.After(maxWait)
+	ticker := time.Tick(checkInterval)
+
+	connectionManager := testAgent.GetConnectionManager()
+	for {
+		select {
+		case <-timeout:
+			t.Fatalf("Expected connection to succeed but timed out - agent state: %d", connectionManager.State)
+		case <-ticker:
+			if connectionManager.State == agent.WebSocketConnected {
+				// Success
+				goto verify
+			}
+		case err := <-done:
+			// If Start returns early, treat it as failure
+			if err != nil {
+				t.Fatalf("Agent failed to start/connect: %v", err)
+			}
+		}
+	}
+
+verify:
+	// Verify that a system was created for the user (self-registration path)
+	systemsAfter, err := testApp.FindRecordsByFilter("systems", "users ~ {:userId}", "", -1, 0, map[string]any{"userId": userRecord.Id})
+	require.NoError(t, err)
+	require.NotEmpty(t, systemsAfter, "Expected a system to be created for DB-backed universal token")
+}
+
 // TestFindOrCreateSystemForToken tests the findOrCreateSystemForToken function
 func TestFindOrCreateSystemForToken(t *testing.T) {
 	hub, testApp, err := createTestHub(t)
 	require.NoError(t, err)
-	defer testApp.Cleanup()
+	defer cleanupTestHub(hub, testApp)
 
 	// Create test user
 	userRecord, err := createTestUser(testApp)

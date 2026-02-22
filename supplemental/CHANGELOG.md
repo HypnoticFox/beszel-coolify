@@ -1,3 +1,141 @@
+## 0.18.4
+
+- Add outbound heartbeat monitoring to external services (#1729)
+
+- Add experimental GPU monitoring for Apple Silicon. (#1747, #1746)
+
+- Add `nvtop` integration for GPU monitoring. (#1508)
+
+- Add `GPU_COLLECTOR` environment variable to manually specify the GPU collector(s).
+
+- Add eMMC health monitoring via sysfs. (#1736)
+
+- Add uptime to systems table. (#1719)
+
+- Add `DISABLE_SSH` environment variable to disable SSH agent functionality. (#1061)
+
+- Add `fingerprint` command to the agent. (#1726)
+
+- Add precise value entry for alerts via text input. (#1718)
+
+- Include GTT memory in AMD GPU metrics and improve device name lookup. (#1569)
+
+- Improve multiplexed logs detection for Podman. (#1755)
+
+- Harden against Docker API path traversal.
+
+- Fix issue where the agent could report incorrect root disk I/O when running in Docker. (#1737)
+
+- Retry Docker check on non-200 HTTP response. (#1754)
+
+- Fix race issue with meter threshold colors.
+
+- Update Go version and dependencies.
+
+- Add `InstallMethod` parameter to Windows install script.
+
+## 0.18.3
+
+- Add experimental sysfs AMD GPU collector. (#737, #1569)
+
+- Update LibreHardwareMonitorLib to 0.9.5. (#1697)
+
+- Improve container network stats accuracy.
+
+- Fix `SHARE_ALL_SYSTEMS` for system_details, smart_devices, and systemd_services. (#1660)
+
+- Parse ATA device statistics for temperature and future metrics. (#1689)
+
+- Add `SMART_DEVICES_SEPARATOR` environment variable and allow drives with the same name to be added with different types (e.g. RAID controllers). (#1655)
+
+- Add tooltips for navbar buttons. (#1636)
+
+- Add icon button for mobile use. (#1687)
+
+- Add tooltip to system name in systems table. (#1640)
+
+- Improve CJK truncation in UI.
+
+- Fix container uptime sorting edge case. (#1696)
+
+- Remove stale systemd services from tracking after deletion. (#1594)
+
+- Apply SELinux context after binary replacement. (#1678)
+
+- Update honeypot field name and autofill ignores. (#1011)
+
+- Write health_file to `/dev/shm` instead of `/tmp` if available. (#1455)
+
+- Don't force lowercase text for active alerts. (#1682)
+
+- Ensure battery current charge doesn't exceed full capacity. (#1668)
+
+- Increase `smartctl --scan` timeout to 10 seconds. (#1465)
+
+- Use name-only matching for unique S.M.A.R.T. devices. (#1655)
+
+- Fix smartctlArgs call to use hasExistingData flag. (#1645)
+
+- Ignore alt key combinations when navigating systems with arrow keys. (#1698)
+
+- Update Go dependencies
+
+## 0.18.2
+
+- Add separate dynamically linked glibc build for Linux. (#1618)
+
+- Fix GPU ID collision between Intel and NVIDIA collectors. (#1522)
+
+- Only hide GPU engine graph if entire usage is 0%. (#1624)
+
+- Add Jetson tegrastats regex support for pre-Jetpack 5 versions. (#1631)
+
+- Improve Indonesian translations. (#1625)
+
+## 0.18.1
+
+- Fix bug in 0.18.0 where all containers were cleared from the "All Containers" page when any system returned no containers.
+
+## 0.18.0
+
+- Add experimental NVML GPU collector. (#1522, #1587)
+
+- Add low battery alerts. (#1507)
+
+- Add battery charge to systems table.
+
+- Add option to make universal token permanent. (#1097, #1614)
+
+- Add `--url` and `--token` command line arguments to the agent. (#1524)
+
+- Collect S.M.A.R.T. data in the background every hour.
+
+- Add `SMART_INTERVAL` environment variable to customize S.M.A.R.T. data collection interval.
+
+- Collect system distribution and architecture.
+
+- Add `system_details` collection to store infrequently updated system information.
+
+- Improve S.M.A.R.T. device path lookup for NVMe devices. (#1504)
+
+- Use origin country flags for Spanish, Portuguese, English languages. (#1571)
+
+- Raise `smartctl` timeout to 15 seconds. (#1465)
+
+- Skip known non-unique product UUID when generating fingerprints. (#1556)
+
+- Fix container logs decoding for raw streams. (#1535)
+
+- Fix capacity sorting in S.M.A.R.T. table. (#1551)
+
+- Fix loader visibility when no systems are present. (#1511)
+
+- Rename login honeypot field to prevent password manager autofill (#1011).
+
+- Add Serbian and Bahasa Indonesia translations.
+
+- Update Go dependencies.
+
 ## 0.17.0
 
 - Add quiet hours to silence alerts during specific time periods. (#265)
@@ -282,4 +420,4 @@ Note that the default memory calculation changed in this release, which may caus
 
 ## Older
 
-Release notes are available at https://github.com/henrygd/beszel/releases
+Release notes are available at <https://github.com/henrygd/beszel/releases>

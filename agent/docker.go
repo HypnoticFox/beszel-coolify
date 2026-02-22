@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/binary"
@@ -28,6 +29,7 @@ import (
 // ansiEscapePattern matches ANSI escape sequences (colors, cursor movement, etc.)
 // This includes CSI sequences like \x1b[...m and simple escapes like \x1b[K
 var ansiEscapePattern = regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]|\x1b\][^\x07]*\x07|\x1b[@-Z\\-_]`)
+var dockerContainerIDPattern = regexp.MustCompile(`^[a-fA-F0-9]{12,64}$`)
 
 const (
 	// Docker API timeout in milliseconds
@@ -60,6 +62,7 @@ type dockerManager struct {
 	decoder             *json.Decoder               // Reusable JSON decoder that reads from buf
 	apiStats            *container.ApiStats         // Reusable API stats object
 	excludeContainers   []string                    // Patterns to exclude containers by name
+	usingPodman         bool                        // Whether the Docker Engine API is running on Podman
 
 	// Cache-time-aware tracking for CPU stats (similar to cpu.go)
 	// Maps cache time intervals to container-specific CPU usage tracking
@@ -71,6 +74,7 @@ type dockerManager struct {
 	// cacheTimeMs -> DeltaTracker for network bytes sent/received
 	networkSentTrackers map[uint16]*deltatracker.DeltaTracker[string, uint64]
 	networkRecvTrackers map[uint16]*deltatracker.DeltaTracker[string, uint64]
+	retrySleep          func(time.Duration)
 }
 
 // userAgentRoundTripper is a custom http.RoundTripper that adds a User-Agent header to all requests
@@ -334,6 +338,8 @@ func validateCpuPercentage(cpuPct float64, containerName string) error {
 func updateContainerStatsValues(stats *container.Stats, cpuPct float64, usedMemory uint64, sent_delta, recv_delta uint64, readTime time.Time) {
 	stats.Cpu = twoDecimals(cpuPct)
 	stats.Mem = bytesToMegabytes(float64(usedMemory))
+	stats.Bandwidth = [2]uint64{sent_delta, recv_delta}
+	// TODO(0.19+): stop populating NetworkSent/NetworkRecv (deprecated in 0.18.3)
 	stats.NetworkSent = bytesToMegabytes(float64(sent_delta))
 	stats.NetworkRecv = bytesToMegabytes(float64(recv_delta))
 	stats.PrevReadTime = readTime
@@ -405,6 +411,8 @@ func (dm *dockerManager) updateContainerStats(ctr *container.ApiInfo, cacheTimeM
 	// reset current stats
 	stats.Cpu = 0
 	stats.Mem = 0
+	stats.Bandwidth = [2]uint64{0, 0}
+	// TODO(0.19+): stop populating NetworkSent/NetworkRecv (deprecated in 0.18.3)
 	stats.NetworkSent = 0
 	stats.NetworkRecv = 0
 
@@ -481,7 +489,7 @@ func (dm *dockerManager) deleteContainerStatsSync(id string) {
 }
 
 // Creates a new http client for Docker or Podman API
-func newDockerManager(a *Agent) *dockerManager {
+func newDockerManager() *dockerManager {
 	dockerHost, exists := GetEnv("DOCKER_HOST")
 	if exists {
 		// return nil if set to empty string
@@ -563,16 +571,17 @@ func newDockerManager(a *Agent) *dockerManager {
 		lastCpuReadTime:     make(map[uint16]map[string]time.Time),
 		networkSentTrackers: make(map[uint16]*deltatracker.DeltaTracker[string, uint64]),
 		networkRecvTrackers: make(map[uint16]*deltatracker.DeltaTracker[string, uint64]),
+		retrySleep:          time.Sleep,
 	}
 
 	// If using podman, return client
 	if strings.Contains(dockerHost, "podman") {
-		a.systemInfo.Podman = true
+		manager.usingPodman = true
 		manager.goodDockerVersion = true
 		return manager
 	}
 
-	// this can take up to 5 seconds with retry, so run in goroutine
+	// run version check in goroutine to avoid blocking (server may not be ready and requires retries)
 	go manager.checkDockerVersion()
 
 	// give version check a chance to complete before returning
@@ -592,18 +601,18 @@ func (dm *dockerManager) checkDockerVersion() {
 	const versionMaxTries = 2
 	for i := 1; i <= versionMaxTries; i++ {
 		resp, err = dm.client.Get("http://localhost/version")
-		if err == nil {
+		if err == nil && resp.StatusCode == http.StatusOK {
 			break
 		}
 		if resp != nil {
 			resp.Body.Close()
 		}
 		if i < versionMaxTries {
-			slog.Debug("Failed to get Docker version; retrying", "attempt", i, "error", err)
-			time.Sleep(5 * time.Second)
+			slog.Debug("Failed to get Docker version; retrying", "attempt", i, "err", err, "response", resp)
+			dm.retrySleep(5 * time.Second)
 		}
 	}
-	if err != nil {
+	if err != nil || resp.StatusCode != http.StatusOK {
 		return
 	}
 	if err := dm.decode(resp, &versionInfo); err != nil {
@@ -645,9 +654,34 @@ func getDockerHost() string {
 	return scheme + socks[0]
 }
 
+func validateContainerID(containerID string) error {
+	if !dockerContainerIDPattern.MatchString(containerID) {
+		return fmt.Errorf("invalid container id")
+	}
+	return nil
+}
+
+func buildDockerContainerEndpoint(containerID, action string, query url.Values) (string, error) {
+	if err := validateContainerID(containerID); err != nil {
+		return "", err
+	}
+	u := &url.URL{
+		Scheme: "http",
+		Host:   "localhost",
+		Path:   fmt.Sprintf("/containers/%s/%s", url.PathEscape(containerID), action),
+	}
+	if len(query) > 0 {
+		u.RawQuery = query.Encode()
+	}
+	return u.String(), nil
+}
+
 // getContainerInfo fetches the inspection data for a container
 func (dm *dockerManager) getContainerInfo(ctx context.Context, containerID string) ([]byte, error) {
-	endpoint := fmt.Sprintf("http://localhost/containers/%s/json", containerID)
+	endpoint, err := buildDockerContainerEndpoint(containerID, "json", nil)
+	if err != nil {
+		return nil, err
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return nil, err
@@ -678,7 +712,15 @@ func (dm *dockerManager) getContainerInfo(ctx context.Context, containerID strin
 
 // getLogs fetches the logs for a container
 func (dm *dockerManager) getLogs(ctx context.Context, containerID string) (string, error) {
-	endpoint := fmt.Sprintf("http://localhost/containers/%s/logs?stdout=1&stderr=1&tail=%d", containerID, dockerLogsTail)
+	query := url.Values{
+		"stdout": []string{"1"},
+		"stderr": []string{"1"},
+		"tail":   []string{fmt.Sprintf("%d", dockerLogsTail)},
+	}
+	endpoint, err := buildDockerContainerEndpoint(containerID, "logs", query)
+	if err != nil {
+		return "", err
+	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return "", err
@@ -696,7 +738,17 @@ func (dm *dockerManager) getLogs(ctx context.Context, containerID string) (strin
 	}
 
 	var builder strings.Builder
-	if err := decodeDockerLogStream(resp.Body, &builder); err != nil {
+	contentType := resp.Header.Get("Content-Type")
+	multiplexed := strings.HasSuffix(contentType, "multiplexed-stream")
+	logReader := io.Reader(resp.Body)
+	if !multiplexed {
+		// Podman may return multiplexed logs without Content-Type. Sniff the first frame header
+		// with a small buffered reader only when the header check fails.
+		bufferedReader := bufio.NewReaderSize(resp.Body, 8)
+		multiplexed = detectDockerMultiplexedStream(bufferedReader)
+		logReader = bufferedReader
+	}
+	if err := decodeDockerLogStream(logReader, &builder, multiplexed); err != nil {
 		return "", err
 	}
 
@@ -708,7 +760,28 @@ func (dm *dockerManager) getLogs(ctx context.Context, containerID string) (strin
 	return logs, nil
 }
 
-func decodeDockerLogStream(reader io.Reader, builder *strings.Builder) error {
+func detectDockerMultiplexedStream(reader *bufio.Reader) bool {
+	const headerSize = 8
+	header, err := reader.Peek(headerSize)
+	if err != nil {
+		return false
+	}
+	if header[0] != 0x01 && header[0] != 0x02 {
+		return false
+	}
+	// Docker's stream framing header reserves bytes 1-3 as zero.
+	if header[1] != 0 || header[2] != 0 || header[3] != 0 {
+		return false
+	}
+	frameLen := binary.BigEndian.Uint32(header[4:])
+	return frameLen <= maxLogFrameSize
+}
+
+func decodeDockerLogStream(reader io.Reader, builder *strings.Builder, multiplexed bool) error {
+	if !multiplexed {
+		_, err := io.Copy(builder, io.LimitReader(reader, maxTotalLogSize))
+		return err
+	}
 	const headerSize = 8
 	var header [headerSize]byte
 	totalBytesRead := 0
@@ -748,4 +821,23 @@ func decodeDockerLogStream(reader io.Reader, builder *strings.Builder) error {
 		}
 		totalBytesRead += int(n)
 	}
+}
+
+// GetHostInfo fetches the system info from Docker
+func (dm *dockerManager) GetHostInfo() (info container.HostInfo, err error) {
+	resp, err := dm.client.Get("http://localhost/info")
+	if err != nil {
+		return info, err
+	}
+	defer resp.Body.Close()
+
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return info, err
+	}
+
+	return info, nil
+}
+
+func (dm *dockerManager) IsPodman() bool {
+	return dm.usingPodman
 }

@@ -35,6 +35,14 @@ type ApiStats struct {
 	MemoryStats MemoryStats `json:"memory_stats"`
 }
 
+// Docker system info from /info API endpoint
+type HostInfo struct {
+	OperatingSystem string `json:"OperatingSystem"`
+	KernelVersion   string `json:"KernelVersion"`
+	NCPU            int    `json:"NCPU"`
+	MemTotal        uint64 `json:"MemTotal"`
+}
+
 func (s *ApiStats) CalculateCpuPercentLinux(prevCpuContainer uint64, prevCpuSystem uint64) float64 {
 	cpuDelta := s.CPUStats.CPUUsage.TotalUsage - prevCpuContainer
 	systemDelta := s.CPUStats.SystemUsage - prevCpuSystem
@@ -122,11 +130,12 @@ var DockerHealthStrings = map[string]DockerHealth{
 
 // Docker container stats
 type Stats struct {
-	Name        string  `json:"n" cbor:"0,keyasint"`
-	Cpu         float64 `json:"c" cbor:"1,keyasint"`
-	Mem         float64 `json:"m" cbor:"2,keyasint"`
-	NetworkSent float64 `json:"ns" cbor:"3,keyasint"`
-	NetworkRecv float64 `json:"nr" cbor:"4,keyasint"`
+	Name        string    `json:"n" cbor:"0,keyasint"`
+	Cpu         float64   `json:"c" cbor:"1,keyasint"`
+	Mem         float64   `json:"m" cbor:"2,keyasint"`
+	NetworkSent float64   `json:"ns,omitzero" cbor:"3,keyasint,omitzero"` // deprecated 0.18.3 (MB) - keep field for old agents/records
+	NetworkRecv float64   `json:"nr,omitzero" cbor:"4,keyasint,omitzero"` // deprecated 0.18.3 (MB) - keep field for old agents/records
+	Bandwidth   [2]uint64 `json:"b,omitzero" cbor:"9,keyasint,omitzero"`  // [sent bytes, recv bytes]
 
 	Health DockerHealth `json:"-" cbor:"5,keyasint"`
 	Status string       `json:"-" cbor:"6,keyasint"`

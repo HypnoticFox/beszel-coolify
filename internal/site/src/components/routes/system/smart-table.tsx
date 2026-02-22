@@ -93,51 +93,15 @@ export const smartColumns: ColumnDef<SmartAttribute>[] = [
 	},
 ]
 
-export type DiskInfo = {
-	id: string
-	system: string
-	device: string
-	model: string
-	capacity: string
-	status: string
-	temperature: number
-	deviceType: string
-	powerOnHours?: number
-	powerCycles?: number
-	attributes?: SmartAttribute[]
-	updated: string
-}
-
 // Function to format capacity display
 function formatCapacity(bytes: number): string {
 	const { value, unit } = formatBytes(bytes)
 	return `${toFixedFloat(value, value >= 10 ? 1 : 2)} ${unit}`
 }
 
-// Function to convert SmartDeviceRecord to DiskInfo
-function convertSmartDeviceRecordToDiskInfo(records: SmartDeviceRecord[]): DiskInfo[] {
-	const unknown = "Unknown"
-	return records.map((record) => ({
-		id: record.id,
-		system: record.system,
-		device: record.name || unknown,
-		model: record.model || unknown,
-		serialNumber: record.serial || unknown,
-		firmwareVersion: record.firmware || unknown,
-		capacity: record.capacity ? formatCapacity(record.capacity) : unknown,
-		status: record.state || unknown,
-		temperature: record.temp || 0,
-		deviceType: record.type || unknown,
-		attributes: record.attributes,
-		updated: record.updated,
-		powerOnHours: record.hours,
-		powerCycles: record.cycles,
-	}))
-}
-
 const SMART_DEVICE_FIELDS = "id,system,name,model,state,capacity,temp,type,hours,cycles,updated"
 
-export const columns: ColumnDef<DiskInfo>[] = [
+export const columns: ColumnDef<SmartDeviceRecord>[] = [
 	{
 		id: "system",
 		accessorFn: (record) => record.system,
@@ -154,12 +118,12 @@ export const columns: ColumnDef<DiskInfo>[] = [
 		},
 	},
 	{
-		accessorKey: "device",
-		sortingFn: (a, b) => a.original.device.localeCompare(b.original.device),
+		accessorKey: "name",
+		sortingFn: (a, b) => a.original.name.localeCompare(b.original.name),
 		header: ({ column }) => <HeaderButton column={column} name={t`Device`} Icon={HardDrive} />,
-		cell: ({ row }) => (
-			<div className="font-medium max-w-40 truncate ms-1.5" title={row.getValue("device")}>
-				{row.getValue("device")}
+		cell: ({ getValue }) => (
+			<div className="font-medium max-w-40 truncate ms-1.5" title={getValue() as string}>
+				{getValue() as string}
 			</div>
 		),
 	},
@@ -167,19 +131,20 @@ export const columns: ColumnDef<DiskInfo>[] = [
 		accessorKey: "model",
 		sortingFn: (a, b) => a.original.model.localeCompare(b.original.model),
 		header: ({ column }) => <HeaderButton column={column} name={t`Model`} Icon={Box} />,
-		cell: ({ row }) => (
-			<div className="max-w-48 truncate ms-1.5" title={row.getValue("model")}>
-				{row.getValue("model")}
+		cell: ({ getValue }) => (
+			<div className="max-w-48 truncate ms-1.5" title={getValue() as string}>
+				{getValue() as string}
 			</div>
 		),
 	},
 	{
 		accessorKey: "capacity",
+		invertSorting: true,
 		header: ({ column }) => <HeaderButton column={column} name={t`Capacity`} Icon={BinaryIcon} />,
-		cell: ({ getValue }) => <span className="ms-1.5">{getValue() as string}</span>,
+		cell: ({ getValue }) => <span className="ms-1.5">{formatCapacity(getValue() as number)}</span>,
 	},
 	{
-		accessorKey: "status",
+		accessorKey: "state",
 		header: ({ column }) => <HeaderButton column={column} name={t`Status`} Icon={Activity} />,
 		cell: ({ getValue }) => {
 			const status = getValue() as string
@@ -191,8 +156,8 @@ export const columns: ColumnDef<DiskInfo>[] = [
 		},
 	},
 	{
-		accessorKey: "deviceType",
-		sortingFn: (a, b) => a.original.deviceType.localeCompare(b.original.deviceType),
+		accessorKey: "type",
+		sortingFn: (a, b) => a.original.type.localeCompare(b.original.type),
 		header: ({ column }) => <HeaderButton column={column} name={t`Type`} Icon={ArrowLeftRightIcon} />,
 		cell: ({ getValue }) => (
 			<div className="ms-1.5">
@@ -203,14 +168,14 @@ export const columns: ColumnDef<DiskInfo>[] = [
 		),
 	},
 	{
-		accessorKey: "powerOnHours",
+		accessorKey: "hours",
 		invertSorting: true,
 		header: ({ column }) => (
 			<HeaderButton column={column} name={t({ message: "Power On", comment: "Power On Time" })} Icon={Clock} />
 		),
 		cell: ({ getValue }) => {
-			const hours = (getValue() ?? 0) as number
-			if (!hours && hours !== 0) {
+			const hours = getValue() as number | undefined
+			if (hours == null) {
 				return <div className="text-sm text-muted-foreground ms-1.5">N/A</div>
 			}
 			const seconds = hours * 3600
@@ -223,37 +188,41 @@ export const columns: ColumnDef<DiskInfo>[] = [
 		},
 	},
 	{
-		accessorKey: "powerCycles",
+		accessorKey: "cycles",
 		invertSorting: true,
 		header: ({ column }) => (
 			<HeaderButton column={column} name={t({ message: "Cycles", comment: "Power Cycles" })} Icon={RotateCwIcon} />
 		),
 		cell: ({ getValue }) => {
 			const cycles = getValue() as number | undefined
-			if (!cycles && cycles !== 0) {
+			if (cycles == null) {
 				return <div className="text-muted-foreground ms-1.5">N/A</div>
 			}
 			return <span className="ms-1.5">{cycles.toLocaleString()}</span>
 		},
 	},
 	{
-		accessorKey: "temperature",
+		accessorKey: "temp",
 		invertSorting: true,
 		header: ({ column }) => <HeaderButton column={column} name={t`Temp`} Icon={ThermometerIcon} />,
 		cell: ({ getValue }) => {
-			const { value, unit } = formatTemperature(getValue() as number)
+			const temp = getValue() as number | null | undefined
+			if (!temp) {
+				return <div className="text-muted-foreground ms-1.5">N/A</div>
+			}
+			const { value, unit } = formatTemperature(temp)
 			return <span className="ms-1.5">{`${value} ${unit}`}</span>
 		},
 	},
 	// {
-	// 	accessorKey: "serialNumber",
-	// 	sortingFn: (a, b) => a.original.serialNumber.localeCompare(b.original.serialNumber),
+	// 	accessorKey: "serial",
+	// 	sortingFn: (a, b) => a.original.serial.localeCompare(b.original.serial),
 	// 	header: ({ column }) => <HeaderButton column={column} name={t`Serial Number`} Icon={HashIcon} />,
 	// 	cell: ({ getValue }) => <span className="ms-1.5">{getValue() as string}</span>,
 	// },
 	// {
-	// 	accessorKey: "firmwareVersion",
-	// 	sortingFn: (a, b) => a.original.firmwareVersion.localeCompare(b.original.firmwareVersion),
+	// 	accessorKey: "firmware",
+	// 	sortingFn: (a, b) => a.original.firmware.localeCompare(b.original.firmware),
 	// 	header: ({ column }) => <HeaderButton column={column} name={t`Firmware`} Icon={CpuIcon} />,
 	// 	cell: ({ getValue }) => <span className="ms-1.5">{getValue() as string}</span>,
 	// },
@@ -272,7 +241,15 @@ export const columns: ColumnDef<DiskInfo>[] = [
 	},
 ]
 
-function HeaderButton({ column, name, Icon }: { column: Column<DiskInfo>; name: string; Icon: React.ElementType }) {
+function HeaderButton({
+	column,
+	name,
+	Icon,
+}: {
+	column: Column<SmartDeviceRecord>
+	name: string
+	Icon: React.ElementType
+}) {
 	const isSorted = column.getIsSorted()
 	return (
 		<Button
@@ -290,7 +267,7 @@ function HeaderButton({ column, name, Icon }: { column: Column<DiskInfo>; name: 
 }
 
 export default function DisksTable({ systemId }: { systemId?: string }) {
-	const [sorting, setSorting] = useState<SortingState>([{ id: systemId ? "device" : "system", desc: false }])
+	const [sorting, setSorting] = useState<SortingState>([{ id: systemId ? "name" : "system", desc: false }])
 	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 	const [rowSelection, setRowSelection] = useState({})
 	const [smartDevices, setSmartDevices] = useState<SmartDeviceRecord[] | undefined>(undefined)
@@ -299,30 +276,32 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 	const [rowActionState, setRowActionState] = useState<{ type: "refresh" | "delete"; id: string } | null>(null)
 	const [globalFilter, setGlobalFilter] = useState("")
 
-	const openSheet = (disk: DiskInfo) => {
+	const openSheet = (disk: SmartDeviceRecord) => {
 		setActiveDiskId(disk.id)
 		setSheetOpen(true)
 	}
 
-	// Fetch smart devices from collection (without attributes to save bandwidth)
-	const fetchSmartDevices = useCallback(() => {
+	// Fetch smart devices
+	useEffect(() => {
+		const controller = new AbortController()
+
 		pb.collection<SmartDeviceRecord>("smart_devices")
 			.getFullList({
 				filter: systemId ? pb.filter("system = {:system}", { system: systemId }) : undefined,
 				fields: SMART_DEVICE_FIELDS,
+				signal: controller.signal,
 			})
-			.then((records) => {
-				setSmartDevices(records)
+			.then(setSmartDevices)
+			.catch((err) => {
+				if (!err.isAbort) {
+					setSmartDevices([])
+				}
 			})
-			.catch(() => setSmartDevices([]))
+
+		return () => controller.abort()
 	}, [systemId])
 
-	// Fetch smart devices when component mounts or systemId changes
-	useEffect(() => {
-		fetchSmartDevices()
-	}, [fetchSmartDevices])
-
-	// Subscribe to live updates so rows add/remove without manual refresh/filtering
+	// Subscribe to updates
 	useEffect(() => {
 		let unsubscribe: (() => void) | undefined
 		const pbOptions = systemId
@@ -370,25 +349,22 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 		}
 	}, [systemId])
 
-	const handleRowRefresh = useCallback(
-		async (disk: DiskInfo) => {
-			if (!disk.system) return
-			setRowActionState({ type: "refresh", id: disk.id })
-			try {
-				await pb.send("/api/beszel/smart/refresh", {
-					method: "POST",
-					query: { system: disk.system },
-				})
-			} catch (error) {
-				console.error("Failed to refresh SMART device:", error)
-			} finally {
-				setRowActionState((state) => (state?.id === disk.id ? null : state))
-			}
-		},
-		[fetchSmartDevices]
-	)
+	const handleRowRefresh = useCallback(async (disk: SmartDeviceRecord) => {
+		if (!disk.system) return
+		setRowActionState({ type: "refresh", id: disk.id })
+		try {
+			await pb.send("/api/beszel/smart/refresh", {
+				method: "POST",
+				query: { system: disk.system },
+			})
+		} catch (error) {
+			console.error("Failed to refresh SMART device:", error)
+		} finally {
+			setRowActionState((state) => (state?.id === disk.id ? null : state))
+		}
+	}, [])
 
-	const handleDeleteDevice = useCallback(async (disk: DiskInfo) => {
+	const handleDeleteDevice = useCallback(async (disk: SmartDeviceRecord) => {
 		setRowActionState({ type: "delete", id: disk.id })
 		try {
 			await pb.collection("smart_devices").delete(disk.id)
@@ -400,7 +376,7 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 		}
 	}, [])
 
-	const actionColumn = useMemo<ColumnDef<DiskInfo>>(
+	const actionColumn = useMemo<ColumnDef<SmartDeviceRecord>>(
 		() => ({
 			id: "actions",
 			enableSorting: false,
@@ -468,13 +444,8 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 		return [...baseColumns, actionColumn]
 	}, [systemId, actionColumn])
 
-	// Convert SmartDeviceRecord to DiskInfo
-	const diskData = useMemo(() => {
-		return smartDevices ? convertSmartDeviceRecordToDiskInfo(smartDevices) : []
-	}, [smartDevices])
-
 	const table = useReactTable({
-		data: diskData,
+		data: smartDevices || ([] as SmartDeviceRecord[]),
 		columns: tableColumns,
 		onSortingChange: setSorting,
 		onColumnFiltersChange: setColumnFilters,
@@ -492,10 +463,10 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 		globalFilterFn: (row, _columnId, filterValue) => {
 			const disk = row.original
 			const systemName = $allSystemsById.get()[disk.system]?.name ?? ""
-			const device = disk.device ?? ""
+			const device = disk.name ?? ""
 			const model = disk.model ?? ""
-			const status = disk.status ?? ""
-			const type = disk.deviceType ?? ""
+			const status = disk.state ?? ""
+			const type = disk.type ?? ""
 			const searchString = `${systemName} ${device} ${model} ${status} ${type}`.toLowerCase()
 			return (filterValue as string)
 				.toLowerCase()
@@ -505,7 +476,7 @@ export default function DisksTable({ systemId }: { systemId?: string }) {
 	})
 
 	// Hide the table on system pages if there's no data, but always show on global page
-	if (systemId && !diskData.length && !columnFilters.length) {
+	if (systemId && !smartDevices?.length && !columnFilters.length) {
 		return null
 	}
 
@@ -685,14 +656,14 @@ function DiskSheet({
 						</Tooltip>
 					</SheetDescription>
 				</SheetHeader>
-				<div className="flex-1 overflow-auto p-4 flex flex-col gap-4">
+				<div className="flex-1 overflow-hidden p-4 flex flex-col gap-4">
 					{isLoading ? (
 						<div className="flex justify-center py-8">
 							<LoaderCircleIcon className="animate-spin size-10 opacity-60" />
 						</div>
 					) : (
 						<>
-							<Alert className="pb-3">
+							<Alert className="pb-3 shrink-0">
 								{status === "PASSED" ? <CheckCircle2Icon className="size-4" /> : <XCircleIcon className="size-4" />}
 								<AlertTitle>
 									<Trans>S.M.A.R.T. Self-Test</Trans>: {status}
@@ -704,9 +675,9 @@ function DiskSheet({
 								)}
 							</Alert>
 							{smartAttributes.length > 0 ? (
-								<div className="rounded-md border overflow-auto">
+								<div className="rounded-md border min-h-0 flex flex-col">
 									<Table>
-										<TableHeader>
+										<TableHeader className="sticky top-0 z-10">
 											{table.getHeaderGroups().map((headerGroup) => (
 												<TableRow key={headerGroup.id}>
 													{headerGroup.headers.map((header) => (

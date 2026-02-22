@@ -215,9 +215,11 @@ interface ContainerStats {
 	/** memory used (gb) */
 	m: number
 	// network sent (mb)
-	ns: number
+	ns?: number
 	// network received (mb)
-	nr: number
+	nr?: number
+	/** bandwidth bytes [sent, recv] */
+	b?: [number, number]
 }
 
 export interface SystemStatsRecord extends RecordModel {
@@ -378,6 +380,19 @@ export interface SmartAttribute {
 	rs?: string
 	/** when failed */
 	wf?: string
+}
+
+export interface SystemDetailsRecord extends RecordModel {
+	system: string
+	hostname: string
+	kernel: string
+	cores: number
+	threads: number
+	cpu: string
+	os: Os
+	os_name: string
+	memory: number
+	podman: boolean
 }
 
 export interface SmartDeviceRecord extends RecordModel {

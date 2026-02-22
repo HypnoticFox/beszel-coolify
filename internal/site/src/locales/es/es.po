@@ -8,7 +8,7 @@ msgstr ""
 "Language: es\n"
 "Project-Id-Version: beszel\n"
 "Report-Msgid-Bugs-To: \n"
-"PO-Revision-Date: 2025-12-01 23:32\n"
+"PO-Revision-Date: 2026-01-31 21:16\n"
 "Last-Translator: \n"
 "Language-Team: Spanish\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
@@ -24,6 +24,10 @@ msgstr ""
 msgid "{0} of {1} row(s) selected."
 msgstr "{0} de {1} fila(s) seleccionada(s)."
 
+#: src/components/routes/system/info-bar.tsx
+msgid "{cores, plural, one {# core} other {# cores}}"
+msgstr "{cores, plural, one {# núcleo} other {# núcleos}}"
+
 #: src/lib/utils.ts
 msgid "{count, plural, one {{countString} day} other {{countString} days}}"
 msgstr "{count, plural, one {{countString} día} other {{countString} días}}"
@@ -35,6 +39,10 @@ msgstr "{count, plural, one {{countString} hora} other {{countString} horas}}"
 #: src/lib/utils.ts
 msgid "{count, plural, one {{countString} minute} few {{countString} minutes} many {{countString} minutes} other {{countString} minutes}}"
 msgstr "{count, plural, one {{countString} minuto} other {{countString} minutos}}"
+
+#: src/components/routes/system/info-bar.tsx
+msgid "{threads, plural, one {# thread} other {# threads}}"
+msgstr "{threads, plural, one {# hilo} other {# hilos}}"
 
 #: src/lib/utils.ts
 msgid "1 hour"
@@ -85,6 +93,7 @@ msgstr "Acciones"
 
 #: src/components/alerts-history-columns.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
+#: src/components/routes/settings/heartbeat.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Active"
 msgstr "Activo"
@@ -132,6 +141,10 @@ msgstr "Administrador"
 msgid "After"
 msgstr "Después"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "After setting the environment variables, restart your Beszel hub for changes to take effect."
+msgstr "Después de configurar las variables de entorno, reinicie su hub Beszel para que los cambios surtan efecto."
+
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "Agent"
 msgstr "Agente"
@@ -149,6 +162,7 @@ msgstr "Alertas"
 
 #: src/components/command-palette.tsx
 #: src/components/containers-table/containers-table.tsx
+#: src/components/navbar.tsx
 #: src/components/routes/containers.tsx
 msgid "All Containers"
 msgstr "Todos los contenedores"
@@ -184,6 +198,11 @@ msgstr "Utilización promedio de CPU de los contenedores"
 
 #. placeholder {0}: alertData.unit
 #: src/components/alerts/alerts-sheet.tsx
+msgid "Average drops below <0>{value}{0}</0>"
+msgstr "El promedio cae por debajo de <0>{value}{0}</0>"
+
+#. placeholder {0}: alertData.unit
+#: src/components/alerts/alerts-sheet.tsx
 msgid "Average exceeds <0>{value}{0}</0>"
 msgstr "El promedio excede <0>{value}{0}</0>"
 
@@ -214,7 +233,13 @@ msgstr "Copias de seguridad"
 msgid "Bandwidth"
 msgstr "Ancho de banda"
 
+#. Battery label in systems table header
+#: src/components/systems-table/systems-table-columns.tsx
+msgid "Bat"
+msgstr "Bat"
+
 #: src/components/routes/system.tsx
+#: src/lib/alerts.ts
 msgid "Battery"
 msgstr "Batería"
 
@@ -229,6 +254,13 @@ msgstr "Se desactivó"
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Before"
 msgstr "Antes"
+
+#. placeholder {0}: alert.value
+#. placeholder {1}: info.unit
+#. placeholder {2}: alert.min
+#: src/components/active-alerts.tsx
+msgid "Below {0}{1} in last {2, plural, one {# minute} other {# minutes}}"
+msgstr "Por debajo de {0}{1} en el último {2, plural, one {# minuto} other {# minutos}}"
 
 #: src/components/login/auth-form.tsx
 msgid "Beszel supports OpenID Connect and many OAuth2 authentication providers."
@@ -323,6 +355,10 @@ msgstr "Revisa {email} para un enlace de restablecimiento."
 msgid "Check logs for more details."
 msgstr "Revisa los registros para más detalles."
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Check your monitoring service"
+msgstr "Compruebe su servicio de monitorización"
+
 #: src/components/routes/settings/notifications.tsx
 msgid "Check your notification service"
 msgstr "Verifica tu servicio de notificaciones"
@@ -331,7 +367,7 @@ msgstr "Verifica tu servicio de notificaciones"
 #: src/components/routes/system/smart-table.tsx
 #: src/components/systems-table/systems-table.tsx
 msgid "Clear"
-msgstr ""
+msgstr "Limpiar"
 
 #: src/components/containers-table/containers-table.tsx
 msgid "Click on a container to view more information."
@@ -568,7 +604,7 @@ msgstr "Documentación"
 
 #. Context: System is down
 #: src/components/alerts-history-columns.tsx
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table-columns.tsx
 #: src/lib/alerts.ts
 msgid "Down"
@@ -616,6 +652,14 @@ msgstr "Vacía"
 msgid "End Time"
 msgstr "Hora de finalización"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Endpoint URL"
+msgstr "URL del punto de conexión"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Endpoint URL to ping (required)"
+msgstr "URL del punto de conexión para ping (obligatorio)"
+
 #: src/components/login/login.tsx
 msgid "Enter email address to reset password"
 msgstr "Ingresa la dirección de correo electrónico para restablecer la contraseña"
@@ -628,9 +672,16 @@ msgstr "Ingresa dirección de correo..."
 msgid "Enter your one-time password."
 msgstr "Ingrese su contraseña de un solo uso."
 
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Ephemeral"
+msgstr "Efímero"
+
 #: src/components/login/auth-form.tsx
 #: src/components/routes/settings/alerts-history-data-table.tsx
 #: src/components/routes/settings/config-yaml.tsx
+#: src/components/routes/settings/heartbeat.tsx
+#: src/components/routes/settings/heartbeat.tsx
+#: src/components/routes/settings/heartbeat.tsx
 #: src/components/routes/settings/notifications.tsx
 #: src/components/routes/settings/quiet-hours.tsx
 #: src/components/routes/settings/quiet-hours.tsx
@@ -638,6 +689,10 @@ msgstr "Ingrese su contraseña de un solo uso."
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Error"
 msgstr "Error"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Example:"
+msgstr "Ejemplo:"
 
 #. placeholder {0}: alert.value
 #. placeholder {1}: info.unit
@@ -657,6 +712,10 @@ msgstr "Los sistemas existentes no definidos en <0>config.yml</0> serán elimina
 #: src/components/systemd-table/systemd-table.tsx
 msgid "Exited active"
 msgstr "Salió activo"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Expires after one hour or on hub restart."
+msgstr "Expira después de una hora o al reiniciar el hub."
 
 #: src/components/routes/settings/alerts-history-data-table.tsx
 msgid "Export"
@@ -691,6 +750,10 @@ msgstr "Error al autenticar"
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Failed to save settings"
 msgstr "Error al guardar la configuración"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Failed to send heartbeat"
+msgstr "Error al enviar el latido (heartbeat)"
 
 #: src/components/routes/settings/notifications.tsx
 msgid "Failed to send test notification"
@@ -771,6 +834,18 @@ msgstr "Cuadrícula"
 msgid "Health"
 msgstr "Estado"
 
+#: src/components/routes/settings/layout.tsx
+msgid "Heartbeat"
+msgstr "Heartbeat"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Heartbeat Monitoring"
+msgstr "Monitorización de Heartbeat"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Heartbeat sent successfully"
+msgstr "Latido enviado con éxito"
+
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
 msgctxt "Button to copy install command"
@@ -780,6 +855,14 @@ msgstr "Comando Homebrew"
 #: src/components/add-system.tsx
 msgid "Host / IP"
 msgstr "Servidor / IP"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "HTTP Method"
+msgstr "Método HTTP"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "HTTP method: POST, GET, or HEAD (default: POST)"
+msgstr "Método HTTP: POST, GET o HEAD (predeterminado: POST)"
 
 #. Context: Battery state
 #: src/lib/i18n.ts
@@ -799,15 +882,15 @@ msgstr "Imagen"
 msgid "Inactive"
 msgstr "Inactivo"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Interval"
+msgstr "Intervalo"
+
 #: src/components/login/auth-form.tsx
 msgid "Invalid email address."
 msgstr "Dirección de correo electrónico no válida."
 
-#. Linux kernel
-#: src/components/routes/system.tsx
-msgid "Kernel"
-msgstr "Kernel"
-
+#: src/components/lang-toggle.tsx
 #: src/components/routes/settings/general.tsx
 msgid "Language"
 msgstr "Idioma"
@@ -900,6 +983,7 @@ msgid "Max 1 min"
 msgstr "Máx. 1 min"
 
 #: src/components/containers-table/containers-table-columns.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systemd-table/systemd-table-columns.tsx
 #: src/components/systemd-table/systemd-table.tsx
 #: src/components/systems-table/systems-table-columns.tsx
@@ -1078,6 +1162,10 @@ msgstr "Pausado"
 msgid "Paused ({pausedSystemsLength})"
 msgstr "Pausado ({pausedSystemsLength})"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Payload format"
+msgstr "Formato de carga útil (payload)"
+
 #: src/components/routes/system/cpu-sheet.tsx
 #: src/components/routes/system/cpu-sheet.tsx
 msgid "Per-core average utilization"
@@ -1086,6 +1174,14 @@ msgstr "Uso promedio por núcleo"
 #: src/components/routes/system/cpu-sheet.tsx
 msgid "Percentage of time spent in each state"
 msgstr "Porcentaje de tiempo dedicado a cada estado"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Permanent"
+msgstr "Permanente"
+
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Persistence"
+msgstr "Persistencia"
 
 #: src/components/routes/settings/notifications.tsx
 msgid "Please <0>configure an SMTP server</0> to ensure alerts are delivered."
@@ -1243,6 +1339,10 @@ msgstr "Guardar configuración"
 msgid "Save system"
 msgstr "Guardar sistema"
 
+#: src/components/routes/settings/tokens-fingerprints.tsx
+msgid "Saved in the database and does not expire until you disable it."
+msgstr "Guardado en la base de datos y no expira hasta que lo desactives."
+
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Schedule"
 msgstr "Programar"
@@ -1263,13 +1363,29 @@ msgstr "Buscar"
 msgid "Search for systems or settings..."
 msgstr "Buscar sistemas o configuraciones..."
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Seconds between pings (default: 60)"
+msgstr "Segundos entre pings (predeterminado: 60)"
+
 #: src/components/alerts/alerts-sheet.tsx
 msgid "See <0>notification settings</0> to configure how you receive alerts."
-msgstr "Consulta <0>configuración de notificaciones</0> para configurar cómo recibe alertas."
+msgstr "Consulta la <0>configuración de notificaciones</0> para configurar cómo recibes alertas."
 
 #: src/components/routes/settings/quiet-hours.tsx
 msgid "Select {foo}"
 msgstr "Seleccionar {foo}"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Send a single heartbeat ping to verify your endpoint is working."
+msgstr "Envíe un único ping de latido para verificar que su punto de conexión funciona."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Send periodic outbound pings to an external monitoring service so you can monitor Beszel without exposing it to the internet."
+msgstr "Envíe pings salientes periódicos a un servicio de monitorización externo para que pueda supervisar Beszel sin exponerlo a internet."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Send test heartbeat"
+msgstr "Enviar latido de prueba"
 
 #: src/components/routes/system.tsx
 msgid "Sent"
@@ -1291,8 +1407,13 @@ msgstr "Servicios"
 msgid "Set percentage thresholds for meter colors."
 msgstr "Establecer umbrales de porcentaje para los colores de los medidores."
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Set the following environment variables on your Beszel hub to enable heartbeat monitoring:"
+msgstr "Configure las siguientes variables de entorno en su hub Beszel para habilitar la monitorización de latidos:"
+
 #: src/components/command-palette.tsx
 #: src/components/command-palette.tsx
+#: src/components/navbar.tsx
 #: src/components/routes/settings/layout.tsx
 #: src/components/routes/settings/layout.tsx
 msgid "Settings"
@@ -1407,9 +1528,17 @@ msgstr "Temperaturas de los sensores del sistema"
 msgid "Test <0>URL</0>"
 msgstr "Probar <0>URL</0>"
 
+#: src/components/routes/settings/heartbeat.tsx
+msgid "Test heartbeat"
+msgstr "Probar latido"
+
 #: src/components/routes/settings/notifications.tsx
 msgid "Test notification sent"
 msgstr "Notificación de prueba enviada"
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "The overall status is <0>ok</0> when all systems are up, <1>warn</1> when alerts are triggered, and <2>error</2> when any system is down."
+msgstr "El estado general es <0>ok</0> cuando todos los sistemas están activos, <1>warn</1> cuando se activan alertas y <2>error</2> cuando algún sistema está caído."
 
 #: src/components/login/forgot-pass-form.tsx
 msgid "Then log into the backend and reset your user account password in the users table."
@@ -1439,11 +1568,12 @@ msgstr "Formato de hora"
 msgid "To email(s)"
 msgstr "A correo(s)"
 
-#: src/components/routes/system.tsx
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
+#: src/components/routes/system/info-bar.tsx
 msgid "Toggle grid"
 msgstr "Alternar cuadrícula"
 
+#: src/components/mode-toggle.tsx
 #: src/components/mode-toggle.tsx
 msgid "Toggle theme"
 msgstr "Alternar tema"
@@ -1510,6 +1640,10 @@ msgid "Triggers when any sensor exceeds a threshold"
 msgstr "Se activa cuando cualquier sensor supera un umbral"
 
 #: src/lib/alerts.ts
+msgid "Triggers when battery charge drops below a threshold"
+msgstr "Se activa cuando la carga de la batería baja de un umbral"
+
+#: src/lib/alerts.ts
 msgid "Triggers when combined up/down exceeds a threshold"
 msgstr "Se activa cuando la suma de subida/bajada supera un umbral"
 
@@ -1564,7 +1698,7 @@ msgid "Unlimited"
 msgstr "Ilimitado"
 
 #. Context: System is up
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
 #: src/components/systems-table/systems-table-columns.tsx
 msgid "Up"
 msgstr "Activo"
@@ -1591,9 +1725,10 @@ msgstr "Actualizado cada 10 minutos."
 msgid "Upload"
 msgstr "Cargar"
 
-#: src/components/routes/system.tsx
+#: src/components/routes/system/info-bar.tsx
+#: src/components/systems-table/systems-table-columns.tsx
 msgid "Uptime"
-msgstr "Tiempo de actividad"
+msgstr "Uptime"
 
 #: src/components/routes/system.tsx
 #: src/components/routes/system.tsx
@@ -1663,8 +1798,12 @@ msgid "Webhook / Push notifications"
 msgstr "Notificaciones Webhook / Push"
 
 #: src/components/routes/settings/tokens-fingerprints.tsx
-msgid "When enabled, this token allows agents to self-register without prior system creation. Expires after one hour or on hub restart."
-msgstr "Cuando está habilitado, este token permite que los agentes se auto-registren sin crear previamente el sistema. Expira después de una hora o al reiniciar el hub."
+msgid "When enabled, this token allows agents to self-register without prior system creation."
+msgstr "Cuando está habilitado, este token permite a los agentes registrarse automáticamente sin creación previa del sistema."
+
+#: src/components/routes/settings/heartbeat.tsx
+msgid "When using POST, each heartbeat includes a JSON payload with system status summary, list of down systems, and triggered alerts."
+msgstr "Al usar POST, cada latido incluye una carga útil JSON con un resumen del estado del sistema, una lista de sistemas caídos y alertas activadas."
 
 #: src/components/add-system.tsx
 #: src/components/routes/settings/tokens-fingerprints.tsx
